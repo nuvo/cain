@@ -30,7 +30,7 @@ func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, ta
 	if err != nil {
 		return err
 	}
-	log.Println((string)(stdout))
+	log.Println(pod, (string)(stdout))
 
 	return nil
 }
