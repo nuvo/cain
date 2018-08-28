@@ -1,5 +1,5 @@
 hash: 5ee4db70200303f16e9adc6b7b0c2b4f9a14115e97ccc4dad6c0f8b22977ce07
-updated: 2018-08-27T16:09:05.412724755+03:00
+updated: 2018-08-28T13:03:03.669502009+03:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 66974140c322f22c1daaf95a18930ea6a9e4d21e
@@ -81,7 +81,7 @@ imports:
 - name: github.com/json-iterator/go
   version: f2b4162afba35581b6d4a50d3b8f34e33c144682
 - name: github.com/maorfr/skbn
-  version: ee4beee4b51584d6a02053e8f78436b68e34341f
+  version: 287daa8db681ecde7182d6d8279a4cdb193c380f
   subpackages:
   - pkg/skbn
   - pkg/utils

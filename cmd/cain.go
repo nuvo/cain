@@ -38,6 +38,7 @@ type backupCmd struct {
 	container string
 	keyspace  string
 	bucket    string
+	parallel  int
 
 	out io.Writer
 }
@@ -51,7 +52,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Short: "backup cassandra cluster to S3",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.bucket); err != nil {
+			if err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.bucket, b.parallel); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -63,6 +64,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&b.container, "container", "c", "cassandra", "container name to backup")
 	f.StringVarP(&b.keyspace, "keyspace", "k", "", "keyspace to backup")
 	f.StringVarP(&b.bucket, "bucket", "b", "", "bucket to backup to")
+	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 
 	cmd.MarkFlagRequired("namespace")
 	cmd.MarkFlagRequired("selector")
