@@ -12,69 +12,76 @@ import (
 	"github.com/maorfr/cain/pkg/utils"
 )
 
+// Backup performs backup
 func Backup(namespace, selector, container, keyspace, bucket string, parallel int) error {
 
 	k8sClient, s3Client, err := getClients(bucket)
 	if err != nil {
 		return err
 	}
-	pods, _ := utils.GetPods(k8sClient, namespace, selector)
-
-	tag := TakeSnapshotsInParallel(k8sClient, pods, namespace, container, keyspace)
-	fromToPathsAllPods, err := GetFromAndToPathsFromAllPods(k8sClient, pods, namespace, container, keyspace, tag, bucket)
+	pods, err := utils.GetPods(k8sClient, namespace, selector)
 	if err != nil {
 		return err
 	}
-	CopyFilesInParallel(k8sClient, s3Client, fromToPathsAllPods, parallel)
+	s3BasePath, err := BackupSchema(k8sClient, s3Client, namespace, pods[0], container, bucket)
+	if err != nil {
+		return err
+	}
+
+	tag := TakeSnapshotsInParallel(k8sClient, pods, namespace, container, keyspace)
+	fromToPathsAllPods, err := utils.GetFromAndToPathsFromAllPods(k8sClient, pods, namespace, container, keyspace, tag, s3BasePath)
+	if err != nil {
+		return err
+	}
+	CopyFilesInParallelK8sToS3(k8sClient, s3Client, fromToPathsAllPods, parallel)
 	ClearSnapshotsInParallel(k8sClient, pods, namespace, container, keyspace, tag)
 
 	return nil
 }
 
-func Restore() error {
+// Restore performs restore
+func Restore(namespace, selector, container, keyspace, bucket, tag string, parallel int) error {
+	_, s3Client, err := getClients(bucket)
+	if err != nil {
+		return err
+	}
+
+	// s3BasePath := filepath.Join(bucket, namespace, "cassandra")
+	fromPaths, err := skbn.GetListOfFilesFromS3(s3Client, "nuvo-skbn-test/dev1/cassandra/cassandra-0/kaa/20180828160856")
+	if err != nil {
+		return err
+	}
+
+	for _, f := range fromPaths {
+		fmt.Println(f)
+	}
+
 	return nil
 }
 
-func TakeSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace string) string {
-	tag := utils.GetTag()
-	bwgSize := len(pods)
-	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
-	for _, pod := range pods {
-		bwg.Add(1)
-
-		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
-			log.Println("Taking snapshot in pod", pod)
-
-			if err := TakeSnapshot(k8sClient, namespace, pod, container, keyspace, tag); err != nil {
-				log.Fatal(err)
-			}
-			bwg.Done()
-		}(k8sClient, namespace, pod, container, keyspace, tag)
+// Schema gets the schema of the cassandra cluster
+func Schema(namespace, selector, container string, onlySum bool) error {
+	k8sClient, _, err := getClients("")
+	if err != nil {
+		return err
 	}
-	bwg.Wait()
+	pods, err := utils.GetPods(k8sClient, namespace, selector)
+	if err != nil {
+		return err
+	}
+	schema, sum, err := DescribeSchema(k8sClient, namespace, pods[0], container)
 
-	return tag
+	if onlySum {
+		fmt.Println(sum)
+	} else {
+		fmt.Println((string)(schema))
+	}
+
+	return nil
 }
 
-func ClearSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace, tag string) {
-	bwgSize := len(pods)
-	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
-	for _, pod := range pods {
-		bwg.Add(1)
-
-		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
-			log.Println("Clearing snapshot in pod", pod)
-
-			if err := ClearSnapshot(k8sClient, namespace, pod, container, keyspace, tag); err != nil {
-				log.Fatal(err)
-			}
-			bwg.Done()
-		}(k8sClient, namespace, pod, container, keyspace, tag)
-	}
-	bwg.Wait()
-}
-
-func CopyFilesInParallel(k8sClient *skbn.K8sClient, s3Client *session.Session, fromToPathsAllPods []utils.FromToPair, parallel int) {
+// CopyFilesInParallelK8sToS3 copies snapshots from all pods in parallel
+func CopyFilesInParallelK8sToS3(k8sClient *skbn.K8sClient, s3Client *session.Session, fromToPathsAllPods []utils.FromToPair, parallel int) {
 	totalFiles := len(fromToPathsAllPods)
 	if parallel == 0 {
 		parallel = totalFiles
@@ -113,24 +120,13 @@ func CopyFilesInParallel(k8sClient *skbn.K8sClient, s3Client *session.Session, f
 	bwg.Wait()
 }
 
-func GetFromAndToPathsFromAllPods(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace, tag, bucket string) ([]utils.FromToPair, error) {
-	var fromToPathsAllPods []utils.FromToPair
-	for _, pod := range pods {
-
-		fromToPaths, err := utils.GetFromAndToPathsByTag(k8sClient, namespace, pod, container, keyspace, tag, bucket)
-		if err != nil {
-			return nil, err
-		}
-		fromToPathsAllPods = append(fromToPathsAllPods, fromToPaths...)
-	}
-
-	return fromToPathsAllPods, nil
-}
-
 func getClients(bucket string) (*skbn.K8sClient, *session.Session, error) {
 	k8sClient, err := skbn.GetClientToK8s()
 	if err != nil {
 		return nil, nil, err
+	}
+	if bucket == "" {
+		return k8sClient, nil, nil
 	}
 	s3Client, err := skbn.GetClientToS3(bucket)
 	if err != nil {

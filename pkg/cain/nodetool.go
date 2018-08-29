@@ -3,34 +3,117 @@ package cain
 import (
 	"fmt"
 	"log"
+	"strings"
 
+	"github.com/maorfr/cain/pkg/utils"
 	"github.com/maorfr/skbn/pkg/skbn"
+	skbn_utils "github.com/maorfr/skbn/pkg/utils"
 )
 
+// TakeSnapshotsInParallel takes a snapshot using nodetool in all pods in parallel
+func TakeSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace string) string {
+	tag := utils.GetTag()
+	bwgSize := len(pods)
+	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	for _, pod := range pods {
+		bwg.Add(1)
+
+		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
+			if err := TakeSnapshot(k8sClient, namespace, pod, container, keyspace, tag); err != nil {
+				log.Fatal(err)
+			}
+			bwg.Done()
+		}(k8sClient, namespace, pod, container, keyspace, tag)
+	}
+	bwg.Wait()
+
+	return tag
+}
+
+// ClearSnapshotsInParallel clears a snapshot using nodetool in all pods in parallel
+func ClearSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace, tag string) {
+	bwgSize := len(pods)
+	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	for _, pod := range pods {
+		bwg.Add(1)
+
+		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
+			if err := ClearSnapshot(k8sClient, namespace, pod, container, keyspace, tag); err != nil {
+				log.Fatal(err)
+			}
+			bwg.Done()
+		}(k8sClient, namespace, pod, container, keyspace, tag)
+	}
+	bwg.Wait()
+}
+
 func TakeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) error {
-	if err := nodetool(k8sClient, namespace, pod, container, keyspace, tag, "snapshot"); err != nil {
+	log.Println(pod, "Taking snapshot")
+	option := fmt.Sprintf("snapshot -t %s %s", tag, keyspace)
+	output, err := nodetool(k8sClient, namespace, pod, container, option)
+	if err != nil {
 		return err
+	}
+	for _, line := range strings.Split(output, "\n") {
+		if line != "" {
+			log.Println(pod, line)
+		}
 	}
 	return nil
 }
 
 func ClearSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) error {
-	if err := nodetool(k8sClient, namespace, pod, container, keyspace, tag, "clearsnapshot"); err != nil {
+	log.Println(pod, "Clearing snapshot")
+	option := fmt.Sprintf("clearsnapshot -t %s %s", tag, keyspace)
+	output, err := nodetool(k8sClient, namespace, pod, container, option)
+	if err != nil {
 		return err
+	}
+	for _, line := range strings.Split(output, "\n") {
+		if line != "" {
+			log.Println(pod, line)
+		}
 	}
 	return nil
 }
 
-func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag, option string) error {
-	command := fmt.Sprintf("nodetool -h localhost -p 7199 %s -t %s %s", option, tag, keyspace)
-	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
-	if len(stderr) != 0 {
-		return fmt.Errorf("STDERR: " + (string)(stderr))
-	}
+func RefreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, table string) error {
+	option := fmt.Sprintf("refresh %s %s", table, keyspace)
+	output, err := nodetool(k8sClient, namespace, pod, container, option)
 	if err != nil {
 		return err
 	}
-	log.Println(pod, (string)(stdout))
-
+	fmt.Println(pod, output)
 	return nil
+}
+
+func GetClusterName(k8sClient *skbn.K8sClient, namespace, pod, container string) (string, error) {
+	option := fmt.Sprintf("describecluster")
+	output, err := nodetool(k8sClient, namespace, pod, container, option)
+	if err != nil {
+		return "", err
+	}
+
+	subStr := "Name:"
+	for _, line := range strings.Split(output, "\n") {
+		if strings.Contains(line, subStr) {
+			output = strings.TrimSpace(strings.Replace(line, subStr, "", 1))
+			break
+		}
+	}
+
+	return output, nil
+}
+
+func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container, option string) (string, error) {
+	command := fmt.Sprintf("nodetool %s", option)
+	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
+	if len(stderr) != 0 {
+		return "", fmt.Errorf("STDERR: " + (string)(stderr))
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return (string)(stdout), nil
 }
