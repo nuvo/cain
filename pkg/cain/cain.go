@@ -24,20 +24,22 @@ func Backup(namespace, selector, container, keyspace, bucket string, parallel in
 	if err != nil {
 		return err
 	}
-
-	tag := TakeSnapshotsInParallel(k8sClient, pods, namespace, container, keyspace)
+	tag := TakeSnapshots(k8sClient, pods, namespace, container, keyspace)
 	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, namespace, container, keyspace, tag, s3BasePath)
 	if err != nil {
 		return err
 	}
-	skbn.PerformCopy(k8sClient, s3Client, "k8s", "s3", fromToPathsAllPods, parallel)
-	ClearSnapshotsInParallel(k8sClient, pods, namespace, container, keyspace, tag)
+	if err := skbn.PerformCopy(k8sClient, s3Client, "k8s", "s3", fromToPathsAllPods, parallel); err != nil {
+		return err
+	}
+	ClearSnapshots(k8sClient, pods, namespace, container, keyspace, tag)
 
 	return nil
 }
 
 // Restore performs restore
 func Restore(bucket, namespace, cluster, keyspace, tag, toNamespace, selector, container string, parallel int) error {
+
 	if toNamespace == "" {
 		toNamespace = namespace
 	}
@@ -45,21 +47,28 @@ func Restore(bucket, namespace, cluster, keyspace, tag, toNamespace, selector, c
 	if err != nil {
 		return err
 	}
-	pods, err := utils.GetPods(k8sClient, toNamespace, selector)
+	existingPods, err := utils.GetPods(k8sClient, toNamespace, selector)
 	if err != nil {
 		return err
 	}
-	_, sum, err := DescribeSchema(k8sClient, toNamespace, pods[0], container)
+	_, sum, err := DescribeSchema(k8sClient, toNamespace, existingPods[0], container)
 	if err != nil {
 		return err
 	}
-
 	s3BasePath := filepath.Join(bucket, "cassandra", namespace, cluster, sum, keyspace, tag)
-	fromToPaths, err := utils.GetFromAndToPathsFromS3(s3Client, k8sClient, s3BasePath, toNamespace, container)
+	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsFromS3(s3Client, k8sClient, s3BasePath, toNamespace, container)
 	if err != nil {
 		return err
 	}
-	skbn.PerformCopy(s3Client, k8sClient, "s3", "k8s", fromToPaths, parallel)
+	if err := utils.Contains(podsToBeRestored, existingPods); err != nil {
+		return err
+	}
+	if err := skbn.PerformCopy(s3Client, k8sClient, "s3", "k8s", fromToPaths, parallel); err != nil {
+		return err
+	}
+	if err := RefreshTables(k8sClient, toNamespace, container, keyspace, podsToBeRestored, tablesToRefresh); err != nil { // Maybe in existingPods
+		return err
+	}
 
 	return nil
 }

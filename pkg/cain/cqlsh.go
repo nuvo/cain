@@ -36,7 +36,7 @@ func BackupSchema(iSrcClient, s3Client interface{}, namespace, pod, container, b
 func DescribeSchema(iClient interface{}, namespace, pod, container string) ([]byte, string, error) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	stdin := strings.NewReader("DESC schema;")
-	executionFile := filepath.Join("/tmp", utils.RandString()+".cql")
+	executionFile := filepath.Join("/tmp", utils.GetRandString()+".cql")
 
 	// Copy execution file to /tmp
 	if err := copyToTmp(k8sClient, namespace, pod, container, executionFile, stdin); err != nil {
