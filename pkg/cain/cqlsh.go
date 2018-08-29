@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/maorfr/cain/pkg/utils"
 	"github.com/maorfr/skbn/pkg/skbn"
 )
 
-func BackupSchema(k8sClient *skbn.K8sClient, s3Client *session.Session, namespace, pod, container, bucket string) (string, error) {
+func BackupSchema(iSrcClient, s3Client interface{}, namespace, pod, container, bucket string) (string, error) {
+	k8sClient := iSrcClient.(*skbn.K8sClient)
 	clusterName, err := GetClusterName(k8sClient, namespace, pod, container)
 	if err != nil {
 		return "", err
@@ -33,8 +33,8 @@ func BackupSchema(k8sClient *skbn.K8sClient, s3Client *session.Session, namespac
 	return s3BasePath, nil
 }
 
-func DescribeSchema(k8sClient *skbn.K8sClient, namespace, pod, container string) ([]byte, string, error) {
-
+func DescribeSchema(iClient interface{}, namespace, pod, container string) ([]byte, string, error) {
+	k8sClient := iClient.(*skbn.K8sClient)
 	stdin := strings.NewReader("DESC schema;")
 	executionFile := filepath.Join("/tmp", utils.RandString()+".cql")
 

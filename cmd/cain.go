@@ -34,7 +34,7 @@ func NewRootCmd(args []string) *cobra.Command {
 	return cmd
 }
 
-type brCmd struct {
+type backupCmd struct {
 	namespace string
 	selector  string
 	container string
@@ -49,7 +49,7 @@ type brCmd struct {
 
 // NewBackupCmd performs a backup of a cassandra cluster
 func NewBackupCmd(out io.Writer) *cobra.Command {
-	b := &brCmd{out: out}
+	b := &backupCmd{out: out}
 
 	cmd := &cobra.Command{
 		Use:   "backup",
@@ -78,59 +78,85 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	return cmd
 }
 
+type restoreCmd struct {
+	bucket      string
+	namespace   string
+	cluster     string
+	keyspace    string
+	tag         string
+	toNamespace string
+	selector    string
+	container   string
+	parallel    int
+
+	out io.Writer
+}
+
 // NewRestoreCmd performs a restore from backup of a cassandra cluster
 func NewRestoreCmd(out io.Writer) *cobra.Command {
-	r := &brCmd{out: out}
+	r := &restoreCmd{out: out}
 
 	cmd := &cobra.Command{
 		Use:   "restore",
 		Short: "restore cassandra cluster from S3",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Restore(r.namespace, r.selector, r.container, r.keyspace, r.bucket, r.tag, r.parallel); err != nil {
+			if err := cain.Restore(r.bucket, r.namespace, r.cluster, r.keyspace, r.tag, r.toNamespace, r.selector, r.container, r.parallel); err != nil {
 				log.Fatal(err)
 			}
 		},
 	}
 	f := cmd.Flags()
 
-	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
+	f.StringVarP(&r.bucket, "bucket", "b", "", "bucket to restore from")
+	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to restore from")
+	f.StringVar(&r.cluster, "cluster", "", "cassandra cluster to restore from")
+	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to restore")
+	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
+	f.StringVar(&r.toNamespace, "to-namespace", "", "namespace to find cassandra cluster")
 	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
 	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to restore")
-	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to restore")
-	f.StringVarP(&r.bucket, "bucket", "b", "", "bucket to restore from")
-	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 
-	cmd.MarkFlagRequired("namespace")
-	cmd.MarkFlagRequired("selector")
-	cmd.MarkFlagRequired("keyspace")
 	cmd.MarkFlagRequired("bucket")
+	cmd.MarkFlagRequired("namespace")
+	cmd.MarkFlagRequired("cluster")
+	cmd.MarkFlagRequired("keyspace")
 	cmd.MarkFlagRequired("tag")
+	cmd.MarkFlagRequired("selector")
 
 	return cmd
 }
 
+type schemaCmd struct {
+	namespace string
+	selector  string
+	container string
+	sum       bool
+
+	out io.Writer
+}
+
 // NewSchemaCmd performs schema related actions
 func NewSchemaCmd(out io.Writer) *cobra.Command {
-	r := &brCmd{out: out}
+	s := &schemaCmd{out: out}
 
 	cmd := &cobra.Command{
 		Use:   "schema",
 		Short: "get schema of cassandra cluster",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Schema(r.namespace, r.selector, r.container, r.sum); err != nil {
+			if err := cain.Schema(s.namespace, s.selector, s.container, s.sum); err != nil {
 				log.Fatal(err)
 			}
 		},
 	}
 	f := cmd.Flags()
 
-	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
-	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to restore")
-	f.BoolVar(&r.sum, "sum", false, "print only checksum")
+	f.StringVarP(&s.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
+	f.StringVarP(&s.selector, "selector", "l", "", "selector to filter on")
+	f.StringVarP(&s.container, "container", "c", "cassandra", "container name to restore")
+	f.BoolVar(&s.sum, "sum", false, "print only checksum")
 
 	cmd.MarkFlagRequired("namespace")
 	cmd.MarkFlagRequired("selector")

@@ -11,7 +11,8 @@ import (
 )
 
 // TakeSnapshotsInParallel takes a snapshot using nodetool in all pods in parallel
-func TakeSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace string) string {
+func TakeSnapshotsInParallel(iClient interface{}, pods []string, namespace, container, keyspace string) string {
+	k8sClient := iClient.(*skbn.K8sClient)
 	tag := utils.GetTag()
 	bwgSize := len(pods)
 	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
@@ -31,7 +32,8 @@ func TakeSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace
 }
 
 // ClearSnapshotsInParallel clears a snapshot using nodetool in all pods in parallel
-func ClearSnapshotsInParallel(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace, tag string) {
+func ClearSnapshotsInParallel(iClient interface{}, pods []string, namespace, container, keyspace, tag string) {
+	k8sClient := iClient.(*skbn.K8sClient)
 	bwgSize := len(pods)
 	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
@@ -87,7 +89,8 @@ func RefreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 	return nil
 }
 
-func GetClusterName(k8sClient *skbn.K8sClient, namespace, pod, container string) (string, error) {
+func GetClusterName(iClient interface{}, namespace, pod, container string) (string, error) {
+	k8sClient := iClient.(*skbn.K8sClient)
 	option := fmt.Sprintf("describecluster")
 	output, err := nodetool(k8sClient, namespace, pod, container, option)
 	if err != nil {

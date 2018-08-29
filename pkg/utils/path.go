@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -9,14 +10,10 @@ import (
 
 const cassandraDataDir = "/var/lib/cassandra/data"
 
-type FromToPair struct {
-	FromPath string
-	ToPath   string
-}
-
-// GetFromAndToPathsFromAllPods aggregates paths from all pods
-func GetFromAndToPathsFromAllPods(k8sClient *skbn.K8sClient, pods []string, namespace, container, keyspace, tag, s3BasePath string) ([]FromToPair, error) {
-	var fromToPathsAllPods []FromToPair
+// GetFromAndToPathsFromK8s aggregates paths from all pods
+func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, container, keyspace, tag, s3BasePath string) ([]skbn.FromToPair, error) {
+	k8sClient := iClient.(*skbn.K8sClient)
+	var fromToPathsAllPods []skbn.FromToPair
 	for _, pod := range pods {
 
 		fromToPaths, err := GetFromAndToPathsK8sToS3(k8sClient, namespace, pod, container, keyspace, tag, s3BasePath)
@@ -29,8 +26,30 @@ func GetFromAndToPathsFromAllPods(k8sClient *skbn.K8sClient, pods []string, name
 	return fromToPathsAllPods, nil
 }
 
-func GetFromAndToPathsK8sToS3(k8sClient interface{}, namespace, pod, container, keyspace, tag, s3BasePath string) ([]FromToPair, error) {
-	var fromToPaths []FromToPair
+func GetFromAndToPathsFromS3(s3Client, k8sClient interface{}, s3BasePath, toNamespace, container string) ([]skbn.FromToPair, error) {
+	var fromToPaths []skbn.FromToPair
+
+	filesToCopyRelativePaths, err := skbn.GetListOfFilesFromS3(s3Client, s3BasePath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fileToCopyRelativePath := range filesToCopyRelativePaths {
+
+		fromPath := filepath.Join(s3BasePath, fileToCopyRelativePath)
+		toPath, err := PathFromS3ToK8s(k8sClient, fromPath, cassandraDataDir, s3BasePath, toNamespace, container)
+		if err != nil {
+			return nil, err
+		}
+
+		fromToPaths = append(fromToPaths, skbn.FromToPair{FromPath: fromPath, ToPath: toPath})
+	}
+
+	return fromToPaths, nil
+}
+
+func GetFromAndToPathsK8sToS3(k8sClient interface{}, namespace, pod, container, keyspace, tag, s3BasePath string) ([]skbn.FromToPair, error) {
+	var fromToPaths []skbn.FromToPair
 
 	pathPrfx := filepath.Join(namespace, pod, container, cassandraDataDir)
 
@@ -53,7 +72,7 @@ func GetFromAndToPathsK8sToS3(k8sClient interface{}, namespace, pod, container, 
 			fromPath := filepath.Join(tablePath, fileToCopyRelativePath)
 			toPath := PathFromK8sToS3(fromPath, cassandraDataDir, s3BasePath)
 
-			fromToPaths = append(fromToPaths, FromToPair{FromPath: fromPath, ToPath: toPath})
+			fromToPaths = append(fromToPaths, skbn.FromToPair{FromPath: fromPath, ToPath: toPath})
 		}
 	}
 
@@ -78,6 +97,30 @@ func PathFromK8sToS3(k8sPath, cassandraDataDir, s3BasePath string) string {
 	return filepath.Join(s3BasePath, keyspace, tag, pod, table, file)
 }
 
-func PathFromS3ToK8s(path string) string {
-	return ""
+func PathFromS3ToK8s(k8sClient interface{}, s3Path, cassandraDataDir, s3BasePath, toNamespace, container string) (string, error) {
+	pSplit := strings.Split(s3Path, "/")
+
+	// 0 = bucket
+	// 1 = cassandra
+	// 2 = namespace
+	// 3 = cluster
+	// 4 = sum
+	keyspace := pSplit[5]
+	// 6 = tag
+	pod := pSplit[7]
+	table := pSplit[8]
+	file := pSplit[9]
+
+	k8sKeyspacePath := filepath.Join(toNamespace, pod, container, cassandraDataDir, keyspace)
+	tableRelativePath, err := skbn.GetListOfFilesFromK8s(k8sClient, k8sKeyspacePath, "d", table+"*")
+	if err != nil {
+		return "", err
+	}
+	if len(tableRelativePath) != 1 {
+		return "", fmt.Errorf("Error with table %s, found %d directories", table, len(tableRelativePath))
+	}
+
+	toPath := filepath.Join(k8sKeyspacePath, tableRelativePath[0], file)
+
+	return toPath, nil
 }

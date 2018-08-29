@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/maorfr/skbn/pkg/skbn"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func GetPods(k8sClient *skbn.K8sClient, namespace, selector string) ([]string, error) {
+func GetPods(iClient interface{}, namespace, selector string) ([]string, error) {
 
+	k8sClient := *iClient.(*skbn.K8sClient)
 	pods, err := k8sClient.ClientSet.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
