@@ -28,7 +28,7 @@ func MapKeysToSlice(m map[string]string) []string {
 	return slice
 }
 
-func Contains(outers, inners []string) error {
+func SliceContainsSlice(outers, inners []string) error {
 	for _, outer := range outers {
 		found := false
 		for _, inner := range inners {

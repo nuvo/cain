@@ -49,17 +49,24 @@ func ClearSnapshots(iClient interface{}, pods []string, namespace, container, ke
 	bwg.Wait()
 }
 
-func RefreshTables(iClient interface{}, namespace, container, keyspace string, pods, tables []string) error {
+// RefreshTables refreshes tables in all pods in parallel
+func RefreshTables(iClient interface{}, namespace, container, keyspace string, pods, tables []string) {
 	k8sClient := iClient.(*skbn.K8sClient)
+	bwgSize := len(pods)
+	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
-		for _, table := range tables {
-			if err := refreshTable(k8sClient, namespace, pod, container, keyspace, table); err != nil {
-				return err
-			}
-		}
-	}
+		bwg.Add(1)
 
-	return nil
+		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace string, table []string) {
+			for _, table := range tables {
+				if err := refreshTable(k8sClient, namespace, pod, container, keyspace, table); err != nil {
+					log.Fatal(err)
+				}
+			}
+			bwg.Done()
+		}(k8sClient, namespace, pod, container, keyspace, tables)
+	}
+	bwg.Wait()
 }
 
 // GetClusterName gets the name of the cassandra cluster
@@ -83,42 +90,35 @@ func GetClusterName(iClient interface{}, namespace, pod, container string) (stri
 }
 
 func takeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) error {
-	log.Println(pod, "Taking snapshot")
+	log.Println(pod, "Taking snapshot of keyspace", keyspace)
 	option := fmt.Sprintf("snapshot -t %s %s", tag, keyspace)
 	output, err := nodetool(k8sClient, namespace, pod, container, option)
 	if err != nil {
 		return err
 	}
-	for _, line := range strings.Split(output, "\n") {
-		if line != "" {
-			log.Println(pod, line)
-		}
-	}
+	printOutput(output, pod)
 	return nil
 }
 
 func clearSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) error {
-	log.Println(pod, "Clearing snapshot")
+	log.Println(pod, "Clearing snapshot of keyspace", keyspace)
 	option := fmt.Sprintf("clearsnapshot -t %s %s", tag, keyspace)
 	output, err := nodetool(k8sClient, namespace, pod, container, option)
 	if err != nil {
 		return err
 	}
-	for _, line := range strings.Split(output, "\n") {
-		if line != "" {
-			log.Println(pod, line)
-		}
-	}
+	printOutput(output, pod)
 	return nil
 }
 
 func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, table string) error {
-	option := fmt.Sprintf("refresh %s %s", table, keyspace)
+	log.Println(pod, "Refreshing table", table, "in keyspace", keyspace)
+	option := fmt.Sprintf("refresh %s %s", keyspace, table)
 	output, err := nodetool(k8sClient, namespace, pod, container, option)
 	if err != nil {
 		return err
 	}
-	fmt.Println(pod, output)
+	printOutput(output, pod)
 	return nil
 }
 
@@ -133,4 +133,12 @@ func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container, option strin
 	}
 
 	return (string)(stdout), nil
+}
+
+func printOutput(output, pod string) {
+	for _, line := range strings.Split(output, "\n") {
+		if line != "" {
+			log.Println(pod, line)
+		}
+	}
 }

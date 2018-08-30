@@ -4,11 +4,13 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"log"
 	"path/filepath"
 	"strings"
 
 	"github.com/maorfr/cain/pkg/utils"
 	"github.com/maorfr/skbn/pkg/skbn"
+	skbn_utils "github.com/maorfr/skbn/pkg/utils"
 )
 
 func BackupSchema(iSrcClient, s3Client interface{}, namespace, pod, container, bucket string) (string, error) {
@@ -34,35 +36,55 @@ func BackupSchema(iSrcClient, s3Client interface{}, namespace, pod, container, b
 }
 
 func DescribeSchema(iClient interface{}, namespace, pod, container string) ([]byte, string, error) {
-	k8sClient := iClient.(*skbn.K8sClient)
-	stdin := strings.NewReader("DESC schema;")
-	executionFile := filepath.Join("/tmp", utils.GetRandString()+".cql")
-
-	// Copy execution file to /tmp
-	if err := copyToTmp(k8sClient, namespace, pod, container, executionFile, stdin); err != nil {
-		return nil, "", err
-	}
-
-	// Execute cqlsh command with file
-	option := fmt.Sprintf("-f %s", executionFile)
-	schema, err := cqlsh(k8sClient, namespace, pod, container, option)
+	option := "DESC schema;"
+	schema, err := cqlsh(iClient, namespace, pod, container, option)
 	if err != nil {
 		return nil, "", err
 	}
-
-	schema = removeWarning(schema)
 	h := sha256.New()
 	h.Write(schema)
 	sum := fmt.Sprintf("%x", h.Sum(nil))[0:6]
 
-	rmFromTmp(k8sClient, namespace, pod, container, executionFile)
-
 	return schema, sum, nil
 }
 
-func cqlsh(k8sClient *skbn.K8sClient, namespace, pod, container, option string) ([]byte, error) {
-	command := fmt.Sprintf("cqlsh %s", option)
+func TruncateTables(iClient interface{}, namespace, container, keyspace string, pods, tables []string) {
+	bwgSize := len(pods)
+	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	for _, pod := range pods {
+		bwg.Add(1)
+
+		go func(iClient interface{}, namespace, container, keyspace, pod string) {
+			for _, table := range tables {
+				log.Println(pod, "Truncating table", table, "in keyspace", keyspace)
+				option := fmt.Sprintf("TRUNCATE %s.%s;", keyspace, table)
+				_, err := cqlsh(iClient, namespace, pod, container, option)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			bwg.Done()
+		}(iClient, namespace, container, keyspace, pod)
+
+	}
+	bwg.Wait()
+}
+
+func cqlsh(iClient interface{}, namespace, pod, container, option string) ([]byte, error) {
+	k8sClient := iClient.(*skbn.K8sClient)
+
+	stdin := strings.NewReader(option)
+	executionFile := filepath.Join("/tmp", utils.GetRandString()+".cql")
+
+	// Copy execution file to /tmp
+	if err := copyToTmp(k8sClient, namespace, pod, container, executionFile, stdin); err != nil {
+		return nil, err
+	}
+
+	command := fmt.Sprintf("cqlsh -f %s", executionFile)
 	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
+
+	rmFromTmp(k8sClient, namespace, pod, container, executionFile)
 
 	if len(stderr) != 0 {
 		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
@@ -71,7 +93,7 @@ func cqlsh(k8sClient *skbn.K8sClient, namespace, pod, container, option string) 
 		return nil, err
 	}
 
-	return stdout, nil
+	return removeWarning(stdout), nil
 }
 
 func copyToTmp(k8sClient *skbn.K8sClient, namespace, pod, container, tmpFileName string, stdin io.Reader) error {
