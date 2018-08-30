@@ -132,6 +132,7 @@ type schemaCmd struct {
 	namespace string
 	selector  string
 	container string
+	keyspace  string
 	sum       bool
 
 	out io.Writer
@@ -146,7 +147,7 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 		Short: "get schema of cassandra cluster",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Schema(s.namespace, s.selector, s.container, s.sum); err != nil {
+			if err := cain.Schema(s.namespace, s.selector, s.container, s.keyspace, s.sum); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -155,7 +156,8 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 
 	f.StringVarP(&s.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
 	f.StringVarP(&s.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&s.container, "container", "c", "cassandra", "container name to restore")
+	f.StringVarP(&s.container, "container", "c", "cassandra", "container name to describe")
+	f.StringVarP(&s.keyspace, "keyspace", "k", "", "keyspace to describe")
 	f.BoolVar(&s.sum, "sum", false, "print only checksum")
 
 	cmd.MarkFlagRequired("namespace")

@@ -27,7 +27,7 @@ func Backup(namespace, selector, container, keyspace, bucket string, parallel in
 	}
 
 	log.Println("Backing up schema")
-	s3BasePath, err := BackupSchema(k8sClient, s3Client, namespace, pods[0], container, bucket)
+	s3BasePath, err := BackupKeyspaceSchema(k8sClient, s3Client, namespace, pods[0], container, keyspace, bucket)
 	if err != nil {
 		return err
 	}
@@ -73,13 +73,13 @@ func Restore(bucket, namespace, cluster, keyspace, tag, toNamespace, selector, c
 	}
 
 	log.Println("Getting current schema")
-	_, sum, err := DescribeSchema(k8sClient, toNamespace, existingPods[0], container)
+	_, sum, err := DescribeKeyspaceSchema(k8sClient, toNamespace, existingPods[0], container, keyspace)
 	if err != nil {
 		return err
 	}
 
 	log.Println("Calculating paths. This may take a while...")
-	s3BasePath := filepath.Join(bucket, "cassandra", namespace, cluster, sum, keyspace, tag)
+	s3BasePath := filepath.Join(bucket, "cassandra", namespace, cluster, keyspace, sum, tag)
 	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsFromS3(s3Client, k8sClient, s3BasePath, toNamespace, container)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func Restore(bucket, namespace, cluster, keyspace, tag, toNamespace, selector, c
 }
 
 // Schema gets the schema of the cassandra cluster
-func Schema(namespace, selector, container string, onlySum bool) error {
+func Schema(namespace, selector, container, keyspace string, onlySum bool) error {
 	k8sClient, err := skbn.GetClientToK8s()
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func Schema(namespace, selector, container string, onlySum bool) error {
 	if err != nil {
 		return err
 	}
-	schema, sum, err := DescribeSchema(k8sClient, namespace, pods[0], container)
+	schema, sum, err := DescribeKeyspaceSchema(k8sClient, namespace, pods[0], container, keyspace)
 
 	if onlySum {
 		fmt.Println(sum)

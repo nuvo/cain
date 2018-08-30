@@ -13,19 +13,19 @@ import (
 	skbn_utils "github.com/maorfr/skbn/pkg/utils"
 )
 
-func BackupSchema(iSrcClient, s3Client interface{}, namespace, pod, container, bucket string) (string, error) {
+func BackupKeyspaceSchema(iSrcClient, s3Client interface{}, namespace, pod, container, keyspace, bucket string) (string, error) {
 	k8sClient := iSrcClient.(*skbn.K8sClient)
 	clusterName, err := GetClusterName(k8sClient, namespace, pod, container)
 	if err != nil {
 		return "", err
 	}
 
-	schema, sum, err := DescribeSchema(k8sClient, namespace, pod, container)
+	schema, sum, err := DescribeKeyspaceSchema(k8sClient, namespace, pod, container, keyspace)
 	if err != nil {
 		return "", err
 	}
 
-	s3BasePath := fmt.Sprintf("%s/%s/%s/%s/%s", bucket, "cassandra", namespace, clusterName, sum)
+	s3BasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s", bucket, "cassandra", namespace, clusterName, keyspace, sum)
 	schemaToPath := fmt.Sprintf("%s/%s", s3BasePath, "schema.cql")
 
 	if err := skbn.UploadToS3(s3Client, schemaToPath, "", schema); err != nil {
@@ -35,8 +35,8 @@ func BackupSchema(iSrcClient, s3Client interface{}, namespace, pod, container, b
 	return s3BasePath, nil
 }
 
-func DescribeSchema(iClient interface{}, namespace, pod, container string) ([]byte, string, error) {
-	option := "DESC schema;"
+func DescribeKeyspaceSchema(iClient interface{}, namespace, pod, container, keyspace string) ([]byte, string, error) {
+	option := fmt.Sprintf("DESC %s;", keyspace)
 	schema, err := cqlsh(iClient, namespace, pod, container, option)
 	if err != nil {
 		return nil, "", err

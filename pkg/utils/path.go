@@ -92,7 +92,7 @@ func PathFromK8sToS3(k8sPath, cassandraDataDir, s3BasePath string) string {
 	// 0 = namespace
 	pod := pSplit[1]
 	// 2 = container
-	keyspace := pSplit[3]
+	// 3 = keyspace
 	tableWithHash := pSplit[4]
 	// 5 = snapshots
 	tag := pSplit[6]
@@ -100,7 +100,7 @@ func PathFromK8sToS3(k8sPath, cassandraDataDir, s3BasePath string) string {
 
 	table := strings.Split(tableWithHash, "-")[0]
 
-	return filepath.Join(s3BasePath, keyspace, tag, pod, table, file)
+	return filepath.Join(s3BasePath, tag, pod, table, file)
 }
 
 func PathFromS3ToK8s(k8sClient interface{}, s3Path, cassandraDataDir, s3BasePath, toNamespace, container string, pods, tables, testedPaths map[string]string) (string, error) {
@@ -110,8 +110,8 @@ func PathFromS3ToK8s(k8sClient interface{}, s3Path, cassandraDataDir, s3BasePath
 	// 1 = cassandra
 	// 2 = namespace
 	// 3 = cluster
-	// 4 = sum
-	keyspace := pSplit[5]
+	keyspace := pSplit[4]
+	// 5 = sum
 	// 6 = tag
 	pod := pSplit[7]
 	table := pSplit[8]
