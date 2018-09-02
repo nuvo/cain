@@ -7,7 +7,6 @@ import (
 
 	"github.com/maorfr/cain/pkg/utils"
 	"github.com/maorfr/skbn/pkg/skbn"
-	skbn_utils "github.com/maorfr/skbn/pkg/utils"
 )
 
 // TakeSnapshots takes a snapshot using nodetool in all pods in parallel
@@ -15,7 +14,7 @@ func TakeSnapshots(iClient interface{}, pods []string, namespace, container, key
 	k8sClient := iClient.(*skbn.K8sClient)
 	tag := utils.GetTimeStamp()
 	bwgSize := len(pods)
-	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 
@@ -35,7 +34,7 @@ func TakeSnapshots(iClient interface{}, pods []string, namespace, container, key
 func ClearSnapshots(iClient interface{}, pods []string, namespace, container, keyspace, tag string) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	bwgSize := len(pods)
-	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 
@@ -53,7 +52,7 @@ func ClearSnapshots(iClient interface{}, pods []string, namespace, container, ke
 func RefreshTables(iClient interface{}, namespace, container, keyspace string, pods, tables []string) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	bwgSize := len(pods)
-	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 

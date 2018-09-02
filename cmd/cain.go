@@ -63,8 +63,8 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 
 	f.StringVarP(&b.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
 	f.StringVarP(&b.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&b.container, "container", "c", "cassandra", "container name to backup")
-	f.StringVarP(&b.keyspace, "keyspace", "k", "", "keyspace to backup")
+	f.StringVarP(&b.container, "container", "c", "cassandra", "container name to act on")
+	f.StringVarP(&b.keyspace, "keyspace", "k", "", "keyspace to act on")
 	f.StringVar(&b.dst, "dst", "", "destination to backup to. Example: s3://bucket/cassandra")
 	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 
@@ -100,11 +100,11 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f := cmd.Flags()
 
 	f.StringVar(&r.src, "src", "", "source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name")
-	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to restore")
+	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to act on")
 	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
-	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to restore to")
+	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
 	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to restore")
+	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to act on")
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 
 	return cmd
@@ -138,8 +138,8 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 
 	f.StringVarP(&s.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
 	f.StringVarP(&s.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&s.container, "container", "c", "cassandra", "container name to describe")
-	f.StringVarP(&s.keyspace, "keyspace", "k", "", "keyspace to describe")
+	f.StringVarP(&s.container, "container", "c", "cassandra", "container name to act on")
+	f.StringVarP(&s.keyspace, "keyspace", "k", "", "keyspace to act on")
 	f.BoolVar(&s.sum, "sum", false, "print only checksum")
 
 	cmd.MarkFlagRequired("namespace")

@@ -2,10 +2,21 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 )
+
+// SplitInTwo splits a string to two parts by a delimeter
+func SplitInTwo(s, sep string) (string, string) {
+	if !strings.Contains(s, sep) {
+		log.Fatal(s, "does not contain", sep)
+	}
+	split := strings.Split(s, sep)
+	return split[0], split[1]
+}
 
 func GetRandString() string {
 	randNum := strconv.Itoa((rand.New(rand.NewSource(time.Now().UnixNano()))).Int())

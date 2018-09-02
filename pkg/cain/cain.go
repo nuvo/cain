@@ -5,16 +5,14 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/maorfr/skbn/pkg/skbn"
-	skbn_utils "github.com/maorfr/skbn/pkg/utils"
-
 	"github.com/maorfr/cain/pkg/utils"
+	"github.com/maorfr/skbn/pkg/skbn"
 )
 
 // Backup performs backup
 func Backup(namespace, selector, container, keyspace, dst string, parallel int) error {
 	log.Println("Backup started!")
-	dstPrefix, dstPath := skbn_utils.SplitInTwo(dst, "://")
+	dstPrefix, dstPath := utils.SplitInTwo(dst, "://")
 
 	log.Println("Getting clients")
 	k8sClient, dstClient, err := skbn.GetClients("k8s", dstPrefix, "", dstPath)
@@ -58,7 +56,7 @@ func Backup(namespace, selector, container, keyspace, dst string, parallel int) 
 // Restore performs restore
 func Restore(src, keyspace, tag, namespace, selector, container string, parallel int) error {
 	log.Println("Restore started!")
-	srcPrefix, srcBasePath := skbn_utils.SplitInTwo(src, "://")
+	srcPrefix, srcBasePath := utils.SplitInTwo(src, "://")
 
 	log.Println("Getting clients")
 	srcClient, k8sClient, err := skbn.GetClients(srcPrefix, "k8s", srcBasePath, "")

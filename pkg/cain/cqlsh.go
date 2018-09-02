@@ -10,7 +10,6 @@ import (
 
 	"github.com/maorfr/cain/pkg/utils"
 	"github.com/maorfr/skbn/pkg/skbn"
-	skbn_utils "github.com/maorfr/skbn/pkg/utils"
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
@@ -52,7 +51,7 @@ func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, k
 // TruncateTables truncates the provided tables in all pods
 func TruncateTables(iK8sClient interface{}, namespace, container, keyspace string, pods, tables []string) {
 	bwgSize := len(pods)
-	bwg := skbn_utils.NewBoundedWaitGroup(bwgSize)
+	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 

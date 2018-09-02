@@ -1,0 +1,6 @@
+**/*gitlab*
+*.md
+*.git
+*.yml
+vendor/
+
