@@ -11,12 +11,12 @@ import (
 const cassandraDataDir = "/var/lib/cassandra/data"
 
 // GetFromAndToPathsFromK8s aggregates paths from all pods
-func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, container, keyspace, tag, s3BasePath string) ([]skbn.FromToPair, error) {
+func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, container, keyspace, tag, dstBasePath string) ([]skbn.FromToPair, error) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	var fromToPathsAllPods []skbn.FromToPair
 	for _, pod := range pods {
 
-		fromToPaths, err := GetFromAndToPathsK8sToS3(k8sClient, namespace, pod, container, keyspace, tag, s3BasePath)
+		fromToPaths, err := GetFromAndToPathsK8sToDst(k8sClient, namespace, pod, container, keyspace, tag, dstBasePath)
 		if err != nil {
 			return nil, err
 		}
@@ -26,10 +26,10 @@ func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, con
 	return fromToPathsAllPods, nil
 }
 
-func GetFromAndToPathsFromS3(s3Client, k8sClient interface{}, s3BasePath, toNamespace, container string) ([]skbn.FromToPair, []string, []string, error) {
+func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcPath, srcBasePath, namespace, container string) ([]skbn.FromToPair, []string, []string, error) {
 	var fromToPaths []skbn.FromToPair
 
-	filesToCopyRelativePaths, err := skbn.GetListOfFilesFromS3(s3Client, s3BasePath)
+	filesToCopyRelativePaths, err := skbn.GetListOfFiles(srcClient, srcPrefix, srcPath)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -42,8 +42,8 @@ func GetFromAndToPathsFromS3(s3Client, k8sClient interface{}, s3BasePath, toName
 	testedPaths := make(map[string]string)
 	for _, fileToCopyRelativePath := range filesToCopyRelativePaths {
 
-		fromPath := filepath.Join(s3BasePath, fileToCopyRelativePath)
-		toPath, err := PathFromS3ToK8s(k8sClient, fromPath, cassandraDataDir, s3BasePath, toNamespace, container, pods, tables, testedPaths)
+		fromPath := filepath.Join(srcPath, fileToCopyRelativePath)
+		toPath, err := PathFromSrcToK8s(k8sClient, fromPath, cassandraDataDir, srcBasePath, namespace, container, pods, tables, testedPaths)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -54,7 +54,7 @@ func GetFromAndToPathsFromS3(s3Client, k8sClient interface{}, s3BasePath, toName
 	return fromToPaths, MapKeysToSlice(pods), MapKeysToSlice(tables), nil
 }
 
-func GetFromAndToPathsK8sToS3(k8sClient interface{}, namespace, pod, container, keyspace, tag, s3BasePath string) ([]skbn.FromToPair, error) {
+func GetFromAndToPathsK8sToDst(k8sClient interface{}, namespace, pod, container, keyspace, tag, dstBasePath string) ([]skbn.FromToPair, error) {
 	var fromToPaths []skbn.FromToPair
 
 	pathPrfx := filepath.Join(namespace, pod, container, cassandraDataDir)
@@ -76,7 +76,7 @@ func GetFromAndToPathsK8sToS3(k8sClient interface{}, namespace, pod, container, 
 		for _, fileToCopyRelativePath := range filesToCopyRelativePaths {
 
 			fromPath := filepath.Join(tablePath, fileToCopyRelativePath)
-			toPath := PathFromK8sToS3(fromPath, cassandraDataDir, s3BasePath)
+			toPath := PathFromK8sToDst(fromPath, cassandraDataDir, dstBasePath)
 
 			fromToPaths = append(fromToPaths, skbn.FromToPair{FromPath: fromPath, ToPath: toPath})
 		}
@@ -85,7 +85,7 @@ func GetFromAndToPathsK8sToS3(k8sClient interface{}, namespace, pod, container, 
 	return fromToPaths, nil
 }
 
-func PathFromK8sToS3(k8sPath, cassandraDataDir, s3BasePath string) string {
+func PathFromK8sToDst(k8sPath, cassandraDataDir, dstBasePath string) string {
 	k8sPath = strings.Replace(k8sPath, cassandraDataDir, "", 1)
 	pSplit := strings.Split(k8sPath, "/")
 
@@ -100,27 +100,24 @@ func PathFromK8sToS3(k8sPath, cassandraDataDir, s3BasePath string) string {
 
 	table := strings.Split(tableWithHash, "-")[0]
 
-	return filepath.Join(s3BasePath, tag, pod, table, file)
+	return filepath.Join(dstBasePath, tag, pod, table, file)
 }
 
-func PathFromS3ToK8s(k8sClient interface{}, s3Path, cassandraDataDir, s3BasePath, toNamespace, container string, pods, tables, testedPaths map[string]string) (string, error) {
-	pSplit := strings.Split(s3Path, "/")
+func PathFromSrcToK8s(k8sClient interface{}, fromPath, cassandraDataDir, srcBasePath, namespace, container string, pods, tables, testedPaths map[string]string) (string, error) {
+	fromPath = strings.Replace(fromPath, srcBasePath+"/", "", 1)
+	pSplit := strings.Split(fromPath, "/")
 
-	// 0 = bucket
-	// 1 = cassandra
-	// 2 = namespace
-	// 3 = cluster
-	keyspace := pSplit[4]
-	// 5 = sum
-	// 6 = tag
-	pod := pSplit[7]
-	table := pSplit[8]
-	file := pSplit[9]
+	keyspace := pSplit[0]
+	// 1 = sum
+	// 2 = tag
+	pod := pSplit[3]
+	table := pSplit[4]
+	file := pSplit[5]
 
 	pods[pod] = "hello there!"
 	tables[table] = "hello there!"
 
-	k8sKeyspacePath := filepath.Join(toNamespace, pod, container, cassandraDataDir, keyspace)
+	k8sKeyspacePath := filepath.Join(namespace, pod, container, cassandraDataDir, keyspace)
 
 	// Don`t test the same path twice
 	pathToTest := filepath.Join(k8sKeyspacePath, table)

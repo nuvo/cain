@@ -6,16 +6,18 @@ import (
 	"path/filepath"
 
 	"github.com/maorfr/skbn/pkg/skbn"
+	skbn_utils "github.com/maorfr/skbn/pkg/utils"
 
 	"github.com/maorfr/cain/pkg/utils"
 )
 
 // Backup performs backup
-func Backup(namespace, selector, container, keyspace, bucket string, parallel int) error {
+func Backup(namespace, selector, container, keyspace, dst string, parallel int) error {
 	log.Println("Backup started!")
+	dstPrefix, dstPath := skbn_utils.SplitInTwo(dst, "://")
 
 	log.Println("Getting clients")
-	k8sClient, s3Client, err := skbn.GetClients("k8s", "s3", "", bucket)
+	k8sClient, dstClient, err := skbn.GetClients("k8s", dstPrefix, "", dstPath)
 	if err != nil {
 		return err
 	}
@@ -27,7 +29,7 @@ func Backup(namespace, selector, container, keyspace, bucket string, parallel in
 	}
 
 	log.Println("Backing up schema")
-	s3BasePath, err := BackupKeyspaceSchema(k8sClient, s3Client, namespace, pods[0], container, keyspace, bucket)
+	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, namespace, pods[0], container, keyspace, dstPrefix, dstPath)
 	if err != nil {
 		return err
 	}
@@ -36,13 +38,13 @@ func Backup(namespace, selector, container, keyspace, bucket string, parallel in
 	tag := TakeSnapshots(k8sClient, pods, namespace, container, keyspace)
 
 	log.Println("Calculating paths. This may take a while...")
-	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, namespace, container, keyspace, tag, s3BasePath)
+	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, namespace, container, keyspace, tag, dstBasePath)
 	if err != nil {
 		return err
 	}
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(k8sClient, s3Client, "k8s", "s3", fromToPathsAllPods, parallel); err != nil {
+	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, parallel); err != nil {
 		return err
 	}
 
@@ -54,33 +56,32 @@ func Backup(namespace, selector, container, keyspace, bucket string, parallel in
 }
 
 // Restore performs restore
-func Restore(bucket, namespace, cluster, keyspace, tag, toNamespace, selector, container string, parallel int) error {
+func Restore(src, keyspace, tag, namespace, selector, container string, parallel int) error {
 	log.Println("Restore started!")
-	if toNamespace == "" {
-		toNamespace = namespace
-	}
+	srcPrefix, srcBasePath := skbn_utils.SplitInTwo(src, "://")
 
 	log.Println("Getting clients")
-	s3Client, k8sClient, err := skbn.GetClients("s3", "k8s", bucket, "")
+	srcClient, k8sClient, err := skbn.GetClients(srcPrefix, "k8s", srcBasePath, "")
 	if err != nil {
 		return err
 	}
 
 	log.Println("Getting pods")
-	existingPods, err := utils.GetPods(k8sClient, toNamespace, selector)
+	existingPods, err := utils.GetPods(k8sClient, namespace, selector)
 	if err != nil {
 		return err
 	}
 
 	log.Println("Getting current schema")
-	_, sum, err := DescribeKeyspaceSchema(k8sClient, toNamespace, existingPods[0], container, keyspace)
+	_, sum, err := DescribeKeyspaceSchema(k8sClient, namespace, existingPods[0], container, keyspace)
 	if err != nil {
 		return err
 	}
+	log.Println("Found schema:", sum)
 
 	log.Println("Calculating paths. This may take a while...")
-	s3BasePath := filepath.Join(bucket, "cassandra", namespace, cluster, keyspace, sum, tag)
-	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsFromS3(s3Client, k8sClient, s3BasePath, toNamespace, container)
+	srcPath := filepath.Join(srcBasePath, keyspace, sum, tag)
+	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsSrcToK8s(srcClient, k8sClient, srcPrefix, srcPath, srcBasePath, namespace, container)
 	if err != nil {
 		return err
 	}
@@ -91,15 +92,15 @@ func Restore(bucket, namespace, cluster, keyspace, tag, toNamespace, selector, c
 	}
 
 	log.Println("Truncating tables")
-	TruncateTables(k8sClient, toNamespace, container, keyspace, existingPods, tablesToRefresh)
+	TruncateTables(k8sClient, namespace, container, keyspace, existingPods, tablesToRefresh)
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(s3Client, k8sClient, "s3", "k8s", fromToPaths, parallel); err != nil {
+	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, parallel); err != nil {
 		return err
 	}
 
 	log.Println("Refreshing tables")
-	RefreshTables(k8sClient, toNamespace, container, keyspace, podsToBeRestored, tablesToRefresh)
+	RefreshTables(k8sClient, namespace, container, keyspace, podsToBeRestored, tablesToRefresh)
 
 	log.Println("All done!")
 	return nil

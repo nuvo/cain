@@ -39,10 +39,8 @@ type backupCmd struct {
 	selector  string
 	container string
 	keyspace  string
-	bucket    string
-	tag       string
+	dst       string
 	parallel  int
-	sum       bool
 
 	out io.Writer
 }
@@ -56,7 +54,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Short: "backup cassandra cluster to S3",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.bucket, b.parallel); err != nil {
+			if err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -67,27 +65,20 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&b.selector, "selector", "l", "", "selector to filter on")
 	f.StringVarP(&b.container, "container", "c", "cassandra", "container name to backup")
 	f.StringVarP(&b.keyspace, "keyspace", "k", "", "keyspace to backup")
-	f.StringVarP(&b.bucket, "bucket", "b", "", "bucket to backup to")
+	f.StringVar(&b.dst, "dst", "", "destination to backup to. Example: s3://bucket/cassandra")
 	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
-
-	cmd.MarkFlagRequired("namespace")
-	cmd.MarkFlagRequired("selector")
-	cmd.MarkFlagRequired("keyspace")
-	cmd.MarkFlagRequired("bucket")
 
 	return cmd
 }
 
 type restoreCmd struct {
-	bucket      string
-	namespace   string
-	cluster     string
-	keyspace    string
-	tag         string
-	toNamespace string
-	selector    string
-	container   string
-	parallel    int
+	src       string
+	keyspace  string
+	tag       string
+	namespace string
+	selector  string
+	container string
+	parallel  int
 
 	out io.Writer
 }
@@ -101,29 +92,20 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		Short: "restore cassandra cluster from S3",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Restore(r.bucket, r.namespace, r.cluster, r.keyspace, r.tag, r.toNamespace, r.selector, r.container, r.parallel); err != nil {
+			if err := cain.Restore(r.src, r.keyspace, r.tag, r.namespace, r.selector, r.container, r.parallel); err != nil {
 				log.Fatal(err)
 			}
 		},
 	}
 	f := cmd.Flags()
 
-	f.StringVarP(&r.bucket, "bucket", "b", "", "bucket to restore from")
-	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to restore from")
-	f.StringVar(&r.cluster, "cluster", "", "cassandra cluster to restore from")
+	f.StringVar(&r.src, "src", "", "source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name")
 	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to restore")
 	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
-	f.StringVar(&r.toNamespace, "to-namespace", "", "namespace to find cassandra cluster")
+	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to restore to")
 	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
 	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to restore")
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
-
-	cmd.MarkFlagRequired("bucket")
-	cmd.MarkFlagRequired("namespace")
-	cmd.MarkFlagRequired("cluster")
-	cmd.MarkFlagRequired("keyspace")
-	cmd.MarkFlagRequired("tag")
-	cmd.MarkFlagRequired("selector")
 
 	return cmd
 }
