@@ -150,3 +150,8 @@ Cain tries to get credentials in the following order:
 ### AWS
 
 Skbn uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html).
+
+## Examples
+
+1. [Helm example](https://github.com/maorfr/cain/tree/master/examples/helm)
+2. [Code example](https://github.com/maorfr/cain/tree/master/examples/code)
