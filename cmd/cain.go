@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -54,7 +55,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Short: "backup cassandra cluster to S3",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel); err != nil {
+			if _, err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -129,8 +130,15 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 		Short: "get schema of cassandra cluster",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Schema(s.namespace, s.selector, s.container, s.keyspace, s.sum); err != nil {
+			schema, sum, err := cain.Schema(s.namespace, s.selector, s.container, s.keyspace)
+			if err != nil {
 				log.Fatal(err)
+			}
+
+			if s.sum {
+				fmt.Println(sum)
+			} else {
+				fmt.Println((string)(schema))
 			}
 		},
 	}
