@@ -1,0 +1,31 @@
+backup:
+  enabled: true
+
+  # Schedule to run jobs. Must be in cron time format
+  # Ref: https://crontab.guru/
+  schedule:
+  - keyspace: keyspace1
+    cron: "* 7 * * *"
+  - keyspace: keyspace2
+    cron: "30 7 * * *"
+
+  history:
+    successfulJobs: 1
+    failedJobs: 3
+
+  annotations:
+    iam.amazonaws.com/role: cain # We are using kube2iam
+
+  image:
+    repository: maorfr/cain
+    tag: latest
+
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 0.1
+    limits:
+      memory: 1Gi
+      cpu: 0.5
+
+  destination: s3://bucket/cassandra
