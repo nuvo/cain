@@ -20,7 +20,7 @@ go build -o cain cmd/cain.go
 Cain performs a backup in the following way:
 1. Backup the `keyspace` schema (using `cqlsh`) and copy it to S3.
 1. Get backup data using `nodetool snapshot` - it creates a snapshot of the `keyspace` in all Cassandra pods in the given `namespace` (according to the `selector`).
-2. Copy the files in `parallel` to S3 using [Skbn](https://github.com/maorfr/skbn) - it copies the files to the specified `dst`, under a `namespace`/<cassandra_cluster_name>/`keyspace`/<keyspaceSchemaHash>/`tag`/.
+2. Copy the files in `parallel` to S3 using [Skbn](https://github.com/maorfr/skbn) - it copies the files to the specified `dst`, under a `namespace`/`cassandrClusterName`/`keyspace`/`keyspaceSchemaHash>`/`tag`/.
 3. Clear all snapshots.
 
 #### Usage
@@ -57,7 +57,7 @@ cain backup \
 
 Cain performs a restore in the following way:
 1. Truncate all tables in `keyspace`.
-2. Copy files from the specified `src` (under `keyspace`/<keyspaceSchemaHash>/`tag`/).
+2. Copy files from the specified `src` (under `keyspace`/`keyspaceSchemaHash`/`tag`/).
 3. Load new data using `nodetool refresh`.
 
 #### Usage
