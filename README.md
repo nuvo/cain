@@ -60,6 +60,8 @@ Cain performs a restore in the following way:
 2. Copy files from the specified `src` (under `keyspace/<keyspaceSchemaHash>/tag/`) - restore is only possible for the same keyspace schema.
 3. Load new data using `nodetool refresh`.
 
+* Cain does not currently restore the schema (must be loaded restoring).
+
 #### Usage
 
 ```
