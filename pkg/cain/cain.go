@@ -88,8 +88,14 @@ func Restore(src, keyspace, tag, namespace, selector, container string, parallel
 		return err
 	}
 
+	log.Println("Getting materialized views to exclude")
+	materializedViews, err := GetMaterializedViews(k8sClient, namespace, container, existingPods[0], keyspace)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Truncating tables")
-	TruncateTables(k8sClient, namespace, container, keyspace, existingPods, tablesToRefresh)
+	TruncateTables(k8sClient, namespace, container, keyspace, existingPods, tablesToRefresh, materializedViews)
 
 	log.Println("Starting files copy")
 	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, parallel); err != nil {

@@ -26,6 +26,7 @@ func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, con
 	return fromToPathsAllPods, nil
 }
 
+// GetFromAndToPathsSrcToK8s performs a path mapping between a source and Kubernetes
 func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcPath, srcBasePath, namespace, container string) ([]skbn.FromToPair, []string, []string, error) {
 	var fromToPaths []skbn.FromToPair
 
@@ -54,6 +55,7 @@ func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcP
 	return fromToPaths, MapKeysToSlice(pods), MapKeysToSlice(tables), nil
 }
 
+// GetFromAndToPathsK8sToDst performs a path mapping between Kubernetes and a destination
 func GetFromAndToPathsK8sToDst(k8sClient interface{}, namespace, pod, container, keyspace, tag, dstBasePath string) ([]skbn.FromToPair, error) {
 	var fromToPaths []skbn.FromToPair
 
@@ -85,6 +87,7 @@ func GetFromAndToPathsK8sToDst(k8sClient interface{}, namespace, pod, container,
 	return fromToPaths, nil
 }
 
+// PathFromK8sToDst maps a single path from Kubernetes to destination
 func PathFromK8sToDst(k8sPath, cassandraDataDir, dstBasePath string) string {
 	k8sPath = strings.Replace(k8sPath, cassandraDataDir, "", 1)
 	pSplit := strings.Split(k8sPath, "/")
@@ -103,6 +106,7 @@ func PathFromK8sToDst(k8sPath, cassandraDataDir, dstBasePath string) string {
 	return filepath.Join(dstBasePath, tag, pod, table, file)
 }
 
+// PathFromSrcToK8s maps a single path from source to Kubernetes
 func PathFromSrcToK8s(k8sClient interface{}, fromPath, cassandraDataDir, srcBasePath, namespace, container string, pods, tables, testedPaths map[string]string) (string, error) {
 	fromPath = strings.Replace(fromPath, srcBasePath+"/", "", 1)
 	pSplit := strings.Split(fromPath, "/")
@@ -126,7 +130,7 @@ func PathFromSrcToK8s(k8sClient interface{}, fromPath, cassandraDataDir, srcBase
 		return toPath, nil
 	}
 
-	tableRelativePath, err := skbn.GetListOfFilesFromK8s(k8sClient, k8sKeyspacePath, "d", table+"*")
+	tableRelativePath, err := skbn.GetListOfFilesFromK8s(k8sClient, k8sKeyspacePath, "d", table+"-*")
 	if err != nil {
 		return "", err
 	}

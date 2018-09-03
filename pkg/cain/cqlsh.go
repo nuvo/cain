@@ -49,7 +49,7 @@ func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, k
 }
 
 // TruncateTables truncates the provided tables in all pods
-func TruncateTables(iK8sClient interface{}, namespace, container, keyspace string, pods, tables []string) {
+func TruncateTables(iK8sClient interface{}, namespace, container, keyspace string, pods, tables, materializedViews []string) {
 	bwgSize := len(pods)
 	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
@@ -57,6 +57,10 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 
 		go func(iK8sClient interface{}, namespace, container, keyspace, pod string) {
 			for _, table := range tables {
+				if utils.Contains(materializedViews, table) {
+					log.Println(pod, "Skipping materialized view", table, "in keyspace", keyspace)
+					continue
+				}
 				log.Println(pod, "Truncating table", table, "in keyspace", keyspace)
 				option := fmt.Sprintf("TRUNCATE %s.%s;", keyspace, table)
 				_, err := Cqlsh(iK8sClient, namespace, pod, container, option)
@@ -69,6 +73,35 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 
 	}
 	bwg.Wait()
+}
+
+// GetMaterializedViews gets all materialized views to avoid truncate and refresh
+func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, keyspace string) ([]string, error) {
+
+	option := fmt.Sprintf("select view_name from system_schema.views where keyspace_name='%s';", keyspace)
+	output, err := Cqlsh(iK8sClient, namespace, pod, container, option)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var views []string
+	headerPassed := false
+	for _, line := range strings.Split((string)(output), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "(") {
+			break
+		}
+		if headerPassed {
+			views = append(views, strings.TrimSpace(line))
+		}
+		if strings.HasPrefix(line, "-") {
+			headerPassed = true
+		}
+	}
+
+	return views, nil
 }
 
 // Cqlsh executes cqlsh -e 'option' in a given pod
