@@ -3,7 +3,6 @@ package cain
 import (
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"log"
 	"path/filepath"
 	"strings"
@@ -36,8 +35,8 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 
 // DescribeKeyspaceSchema describes the schema of the keyspace
 func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, keyspace string) ([]byte, string, error) {
-	option := fmt.Sprintf("DESC %s;", keyspace)
-	schema, err := Cqlsh(iK8sClient, namespace, pod, container, option)
+	command := []string{fmt.Sprintf("DESC %s;", keyspace)}
+	schema, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 	if err != nil {
 		return nil, "", err
 	}
@@ -62,8 +61,8 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 					continue
 				}
 				log.Println(pod, "Truncating table", table, "in keyspace", keyspace)
-				option := fmt.Sprintf("TRUNCATE %s.%s;", keyspace, table)
-				_, err := Cqlsh(iK8sClient, namespace, pod, container, option)
+				command := []string{"TRUNCATE", fmt.Sprintf("%s.%s;", keyspace, table)}
+				_, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -78,8 +77,8 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 // GetMaterializedViews gets all materialized views to avoid truncate and refresh
 func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, keyspace string) ([]string, error) {
 
-	option := fmt.Sprintf("select view_name from system_schema.views where keyspace_name='%s';", keyspace)
-	output, err := Cqlsh(iK8sClient, namespace, pod, container, option)
+	command := []string{"SELECT", "view_name", "FROM", "system_schema.views", "WHERE", fmt.Sprintf("keyspace_name='%s';", keyspace)}
+	output, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -104,22 +103,13 @@ func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, key
 	return views, nil
 }
 
-// Cqlsh executes cqlsh -e 'option' in a given pod
-func Cqlsh(iK8sClient interface{}, namespace, pod, container, option string) ([]byte, error) {
+// Cqlsh executes cqlsh -e 'command' in a given pod
+func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []string) ([]byte, error) {
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
-	stdin := strings.NewReader(option)
-	executionFile := filepath.Join("/tmp", utils.GetRandString()+".cql")
-
-	// Copy execution file to /tmp
-	if err := copyToTmp(k8sClient, namespace, pod, container, executionFile, stdin); err != nil {
-		return nil, err
-	}
-
-	command := []string{"cqlsh", "-f", executionFile}
+	command = append([]string{"cqlsh", "-e"}, command...)
+	fmt.Println(command)
 	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
-
-	rmFromTmp(k8sClient, namespace, pod, container, executionFile)
 
 	if len(stderr) != 0 {
 		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
@@ -129,32 +119,6 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container, option string) ([]
 	}
 
 	return removeWarning(stdout), nil
-}
-
-func copyToTmp(k8sClient *skbn.K8sClient, namespace, pod, container, tmpFileName string, stdin io.Reader) error {
-	command := []string{"cp", "/dev/stdin", tmpFileName}
-	_, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, stdin)
-	if len(stderr) != 0 {
-		return fmt.Errorf("STDERR: " + (string)(stderr))
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func rmFromTmp(k8sClient *skbn.K8sClient, namespace, pod, container, tmpFileName string) error {
-	command := []string{"rm", tmpFileName}
-	_, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
-	if len(stderr) != 0 {
-		return fmt.Errorf("STDERR: " + (string)(stderr))
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func removeWarning(b []byte) []byte {
