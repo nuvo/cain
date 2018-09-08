@@ -61,7 +61,7 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 					continue
 				}
 				log.Println(pod, "Truncating table", table, "in keyspace", keyspace)
-				command := []string{"TRUNCATE", fmt.Sprintf("%s.%s;", keyspace, table)}
+				command := []string{fmt.Sprintf("TRUNCATE %s.%s;", keyspace, table)}
 				_, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 				if err != nil {
 					log.Fatal(err)
@@ -77,7 +77,7 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 // GetMaterializedViews gets all materialized views to avoid truncate and refresh
 func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, keyspace string) ([]string, error) {
 
-	command := []string{"SELECT", "view_name", "FROM", "system_schema.views", "WHERE", fmt.Sprintf("keyspace_name='%s';", keyspace)}
+	command := []string{fmt.Sprintf("SELECT view_name FROM system_schema.views WHERE keyspace_name='%s';", keyspace)}
 	output, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 	if err != nil {
 		log.Fatal(err)
