@@ -108,7 +108,6 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
 	command = append([]string{"cqlsh", "-e"}, command...)
-	fmt.Println(command)
 	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
 
 	if len(stderr) != 0 {
