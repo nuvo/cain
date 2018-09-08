@@ -1,7 +1,7 @@
 package: github.com/maorfr/cain
 import:
 - package: github.com/maorfr/skbn
-  version: 0.1.1-pre-1
+  version: 0.1.1
   subpackages:
   - pkg/skbn
 - package: github.com/spf13/cobra

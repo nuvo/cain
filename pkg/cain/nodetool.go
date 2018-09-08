@@ -123,7 +123,7 @@ func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 
 func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container, option string) (string, error) {
 	command := fmt.Sprintf("nodetool %s", option)
-	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
+	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, strings.Fields(command), nil)
 	if len(stderr) != 0 {
 		return "", fmt.Errorf("STDERR: " + (string)(stderr))
 	}

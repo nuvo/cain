@@ -116,7 +116,7 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container, option string) ([]
 		return nil, err
 	}
 
-	command := fmt.Sprintf("cqlsh -f %s", executionFile)
+	command := []string{"cqlsh", "-f", executionFile}
 	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
 
 	rmFromTmp(k8sClient, namespace, pod, container, executionFile)
@@ -132,7 +132,7 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container, option string) ([]
 }
 
 func copyToTmp(k8sClient *skbn.K8sClient, namespace, pod, container, tmpFileName string, stdin io.Reader) error {
-	command := fmt.Sprintf("cp /dev/stdin %s", tmpFileName)
+	command := []string{"cp", "/dev/stdin", tmpFileName}
 	_, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, stdin)
 	if len(stderr) != 0 {
 		return fmt.Errorf("STDERR: " + (string)(stderr))
@@ -145,7 +145,7 @@ func copyToTmp(k8sClient *skbn.K8sClient, namespace, pod, container, tmpFileName
 }
 
 func rmFromTmp(k8sClient *skbn.K8sClient, namespace, pod, container, tmpFileName string) error {
-	command := fmt.Sprintf("rm %s", tmpFileName)
+	command := []string{"rm", tmpFileName}
 	_, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
 	if len(stderr) != 0 {
 		return fmt.Errorf("STDERR: " + (string)(stderr))
