@@ -5,7 +5,7 @@ Cain is a backup and restore tool for Cassandra on Kubernetes. It is named after
 ## Install
 
 ```
-wget -qO- https://github.com/maorfr/cain/releases/download/0.1.0/cain.tar.gz | sudo tar xvz -C /usr/local/bin
+wget -qO- https://github.com/maorfr/cain/releases/download/0.1.1/cain.tar.gz | sudo tar xvz -C /usr/local/bin
 ```
 
 ## Build from source
