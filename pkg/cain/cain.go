@@ -13,6 +13,10 @@ func Backup(namespace, selector, container, keyspace, dst string, parallel int) 
 	log.Println("Backup started!")
 	dstPrefix, dstPath := utils.SplitInTwo(dst, "://")
 
+	if err := skbn.TestImplementationsExist("k8s", dstPrefix); err != nil {
+		return "", err
+	}
+
 	log.Println("Getting clients")
 	k8sClient, dstClient, err := skbn.GetClients("k8s", dstPrefix, "", dstPath)
 	if err != nil {
