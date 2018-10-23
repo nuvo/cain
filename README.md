@@ -1,3 +1,8 @@
+[![GitHub tag](https://img.shields.io/github/tag/maorfr/cain.svg?maxAge=86400)](https://github.com/atlassian/gostatsd)
+[![Docker Pulls](https://img.shields.io/docker/pulls/maorfr/cain.svg)](https://hub.docker.com/r/maorfr/cain/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/maorfr/cain)](https://goreportcard.com/report/github.com/maorfr/cain)
+[![license](https://img.shields.io/github/license/maorfr/cain.svg)](https://github.com/maorfr/cain/blob/master/LICENSE)
+
 # Cain
 
 Cain is a backup and restore tool for Cassandra on Kubernetes. It is named after the DC Comics superhero [Cassandra Cain](https://en.wikipedia.org/wiki/Cassandra_Cain).
