@@ -1,4 +1,4 @@
-[![GitHub tag](https://img.shields.io/github/tag/maorfr/cain.svg?maxAge=86400)](https://github.com/atlassian/gostatsd)
+[![Release](https://github-basic-badges.herokuapp.com/release/maorfr/cain.svg)](https://github.com/maorfr/cain/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/maorfr/cain.svg)](https://hub.docker.com/r/maorfr/cain/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/maorfr/cain)](https://goreportcard.com/report/github.com/maorfr/cain)
 [![license](https://img.shields.io/github/license/maorfr/cain.svg)](https://github.com/maorfr/cain/blob/master/LICENSE)
