@@ -17,7 +17,7 @@ backup:
     iam.amazonaws.com/role: cain # We are using kube2iam
 
   image:
-    repository: maorfr/cain
+    repository: nuvo/cain
     tag: latest
 
   resources:

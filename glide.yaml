@@ -1,6 +1,6 @@
-package: github.com/maorfr/cain
+package: github.com/nuvo/cain
 import:
-- package: github.com/maorfr/skbn
+- package: github.com/nuvo/skbn
   version: 0.1.1
   subpackages:
   - pkg/skbn

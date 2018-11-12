@@ -1,7 +1,7 @@
-[![Release](https://github-basic-badges.herokuapp.com/release/maorfr/cain.svg)](https://github.com/maorfr/cain/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/maorfr/cain.svg)](https://hub.docker.com/r/maorfr/cain/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/maorfr/cain)](https://goreportcard.com/report/github.com/maorfr/cain)
-[![license](https://img.shields.io/github/license/maorfr/cain.svg)](https://github.com/maorfr/cain/blob/master/LICENSE)
+[![Release](https://github-basic-badges.herokuapp.com/release/nuvo/cain.svg)](https://github.com/nuvo/cain/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/nuvo/cain.svg)](https://hub.docker.com/r/nuvo/cain/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nuvo/cain)](https://goreportcard.com/report/github.com/nuvo/cain)
+[![license](https://img.shields.io/github/license/nuvo/cain.svg)](https://github.com/nuvo/cain/blob/master/LICENSE)
 
 # Cain
 
@@ -12,7 +12,7 @@ Now an official part of the Helm [incubator/cassandra](https://github.com/helm/c
 ## Install
 
 ```
-wget -qO- https://github.com/maorfr/cain/releases/download/0.1.0/cain.tar.gz | sudo tar xvz -C /usr/local/bin
+wget -qO- https://github.com/nuvo/cain/releases/download/0.1.0/cain.tar.gz | sudo tar xvz -C /usr/local/bin
 ```
 
 ## Build from source
@@ -32,7 +32,7 @@ go build -o cain cmd/cain.go
 Cain performs a backup in the following way:
 1. Backup the `keyspace` schema (using `cqlsh`) and copy it to S3.
 1. Get backup data using `nodetool snapshot` - it creates a snapshot of the `keyspace` in all Cassandra pods in the given `namespace` (according to `selector`).
-2. Copy the files in `parallel` to S3 using [Skbn](https://github.com/maorfr/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
+2. Copy the files in `parallel` to S3 using [Skbn](https://github.com/nuvo/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
 3. Clear all snapshots.
 
 #### Usage
@@ -146,7 +146,7 @@ cain schema \
 
 ## Support for additional storage services
 
-Since Cain uses [Skbn](https://github.com/maorfr/skbn), adding support for additional storage services is simple. Read [this post](https://medium.com/nuvo-group-tech/copy-files-and-directories-between-kubernetes-and-s3-d290ded9a5e0) for more information.
+Since Cain uses [Skbn](https://github.com/nuvo/skbn), adding support for additional storage services is simple. Read [this post](https://medium.com/nuvo-group-tech/copy-files-and-directories-between-kubernetes-and-s3-d290ded9a5e0) for more information.
 
 ## Credentials
 
@@ -165,5 +165,5 @@ Skbn uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-fo
 
 ## Examples
 
-1. [Helm example](https://github.com/maorfr/cain/tree/master/examples/helm)
-2. [Code example](https://github.com/maorfr/cain/tree/master/examples/code)
+1. [Helm example](https://github.com/nuvo/cain/tree/master/examples/helm)
+2. [Code example](https://github.com/nuvo/cain/tree/master/examples/code)

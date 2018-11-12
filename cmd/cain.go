@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/maorfr/cain/pkg/cain"
+	"github.com/nuvo/cain/pkg/cain"
 
 	"github.com/spf13/cobra"
 )

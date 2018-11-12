@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/maorfr/skbn/pkg/skbn"
+	"github.com/nuvo/skbn/pkg/skbn"
 )
 
 const cassandraDataDir = "/var/lib/cassandra/data"
