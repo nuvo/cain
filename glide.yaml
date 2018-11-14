@@ -1,8 +1,0 @@
-package: github.com/nuvo/cain
-import:
-- package: github.com/nuvo/skbn
-  version: 0.1.1
-  subpackages:
-  - pkg/skbn
-- package: github.com/spf13/cobra
-  version: v0.0.3
