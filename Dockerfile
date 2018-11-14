@@ -1,12 +1,8 @@
-FROM golang:1.10.3-alpine as builder
-WORKDIR /go/src/github.com/nuvo/cain/
-COPY . .
-RUN apk --no-cache add git glide \
-    && glide up \
-    && CGO_ENABLED=0 GOOS=linux go build -o cain cmd/cain.go
-
 FROM alpine:3.8
 RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /go/src/github.com/nuvo/cain/cain /usr/local/bin/cain
+COPY cain /usr/local/bin/cain
+RUN addgroup -g 1001 -S skbn \
+    && adduser -u 1001 -D -S -G cain cain
+USER cain
+WORKDIR /home/cain
 CMD ["cain"]
