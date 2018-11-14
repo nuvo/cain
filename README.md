@@ -1,4 +1,5 @@
-[![Release](https://github-basic-badges.herokuapp.com/release/nuvo/cain.svg)](https://github.com/nuvo/cain/releases)
+[![Release](https://img.shields.io/github/release/nuvo/cain.svg)](https://github.com/nuvo/cain/releases)
+[![Travis branch](https://img.shields.io/travis/nuvo/cain/master.svg)](https://travis-ci.org/nuvo/cain)
 [![Docker Pulls](https://img.shields.io/docker/pulls/nuvo/cain.svg)](https://hub.docker.com/r/nuvo/cain/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nuvo/cain)](https://goreportcard.com/report/github.com/nuvo/cain)
 [![license](https://img.shields.io/github/license/nuvo/cain.svg)](https://github.com/nuvo/cain/blob/master/LICENSE)
@@ -7,39 +8,47 @@
 
 Cain is a backup and restore tool for Cassandra on Kubernetes. It is named after the DC Comics superhero [Cassandra Cain](https://en.wikipedia.org/wiki/Cassandra_Cain).
 
-Now an official part of the Helm [incubator/cassandra](https://github.com/helm/charts/tree/master/incubator/cassandra) chart!
+Cain supports the following cloud storage services:
+
+* AWS S3
+* Azure Blob Storage
+
+Cain is now an official part of the Helm [incubator/cassandra](https://github.com/helm/charts/tree/master/incubator/cassandra) chart!
 
 ## Install
 
-```
-wget -qO- https://github.com/nuvo/cain/releases/download/0.1.0/cain.tar.gz | sudo tar xvz -C /usr/local/bin
-```
+### Prerequisites
 
-## Build from source
+1. git
+2. [dep](https://github.com/golang/dep)
 
-Cain uses [glide](https://github.com/Masterminds/glide) as a dependency management tool, since some of the referenced packages are not available using [dep](https://github.com/golang/dep).
+### From a release
+
+Download the latest release from the [Releases page](https://github.com/nuvo/cain/releases) or use it with a [Docker image](https://hub.docker.com/r/nuvo/cain)
+
+### From source
 
 ```
-glide up
-go build -o cain cmd/cain.go
+mkdir -p $GOPATH/src/github.com/nuvo && cd $_
+git clone https://github.com/nuvo/cain.git && cd cain
+make
 ```
-
 
 ## Commands
 
-### Backup Cassandra cluster to S3
+### Backup Cassandra cluster to cloud storage
 
 Cain performs a backup in the following way:
-1. Backup the `keyspace` schema (using `cqlsh`) and copy it to S3.
+1. Backup the `keyspace` schema (using `cqlsh`).
 1. Get backup data using `nodetool snapshot` - it creates a snapshot of the `keyspace` in all Cassandra pods in the given `namespace` (according to `selector`).
-2. Copy the files in `parallel` to S3 using [Skbn](https://github.com/nuvo/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
+2. Copy the files in `parallel` to cloud storage using [Skbn](https://github.com/nuvo/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
 3. Clear all snapshots.
 
 #### Usage
 
 ```
 $ cain backup --help
-backup cassandra cluster to S3
+backup cassandra cluster to cloud storage
 
 Usage:
   cain backup [flags]
@@ -54,18 +63,29 @@ Flags:
   -l, --selector string    selector to filter on
 ```
 
-#### Example
+#### Examples
+
+Backup to AWS S3
 
 ```
 cain backup \
     -n default \
     -l release=cassandra \
     -k keyspace \
-    --dst s3://db-backup/cassandra \
-    -p 0
+    --dst s3://db-backup/cassandra
 ```
 
-### Restore Cassandra backup from S3
+Backup to Azure Blob Storage
+
+```
+cain backup \
+    -n default \
+    -l release=cassandra \
+    -k keyspace \
+    --dst abs://my-account/db-backup-container/cassandra
+```
+
+### Restore Cassandra backup from cloud storage
 
 Cain performs a restore in the following way:
 1. Truncate all tables in `keyspace`.
@@ -78,7 +98,7 @@ Cain performs a restore in the following way:
 
 ```
 $ cain restore --help
-restore cassandra cluster from S3
+restore cassandra cluster from cloud storage
 
 Usage:
   cain restore [flags]
@@ -94,7 +114,9 @@ Flags:
   -t, --tag string         tag to restore
 ```
 
-#### Example
+#### Examples
+
+Restore from S3
 
 ```
 cain restore \
@@ -102,8 +124,18 @@ cain restore \
     -n default \
     -k keyspace \
     -l release=cassandra \
-    -t 20180903091624 \
-    -p 0
+    -t 20180903091624
+```
+
+Restore from Azure Blob Storage
+
+```
+cain restore \
+    --src s3://my-account/db-backup-container/cassandra/default/ring01
+    -n default \
+    -k keyspace \
+    -l release=cassandra \
+    -t 20180903091624
 ```
 
 ### Describe keyspace schema
@@ -128,7 +160,7 @@ Flags:
       --sum                print only checksum
 ```
 
-#### Example
+#### Examples
 
 ```
 cain schema \
@@ -163,7 +195,11 @@ Cain tries to get credentials in the following order:
 
 Skbn uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html).
 
+### Azure Blob Storage
+
+Skbn uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment variables for authenication.
+
 ## Examples
 
-1. [Helm example](https://github.com/nuvo/cain/tree/master/examples/helm)
-2. [Code example](https://github.com/nuvo/cain/tree/master/examples/code)
+1. [Helm example](/examples/helm)
+2. [Code example](/examples/code)
