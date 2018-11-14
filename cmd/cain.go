@@ -31,6 +31,7 @@ func NewRootCmd(args []string) *cobra.Command {
 	cmd.AddCommand(NewBackupCmd(out))
 	cmd.AddCommand(NewRestoreCmd(out))
 	cmd.AddCommand(NewSchemaCmd(out))
+	cmd.AddCommand(NewVersionCmd(out))
 
 	return cmd
 }
@@ -52,7 +53,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "backup",
-		Short: "backup cassandra cluster to S3",
+		Short: "backup cassandra cluster to cloud storage",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			if _, err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel); err != nil {
@@ -90,7 +91,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "restore",
-		Short: "restore cassandra cluster from S3",
+		Short: "restore cassandra cluster from cloud storage",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cain.Restore(r.src, r.keyspace, r.tag, r.namespace, r.selector, r.container, r.parallel); err != nil {
@@ -152,6 +153,22 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 
 	cmd.MarkFlagRequired("namespace")
 	cmd.MarkFlagRequired("selector")
+
+	return cmd
+}
+
+var GitTag, GitCommit string
+
+// NewVersionCmd prints version information
+func NewVersionCmd(out io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "version",
+		Short: "Print version information",
+		Long:  ``,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Version %s (git-%s)\n", GitTag, GitCommit)
+		},
+	}
 
 	return cmd
 }
