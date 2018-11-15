@@ -124,6 +124,9 @@ func Schema(namespace, selector, container, keyspace string) ([]byte, string, er
 		return nil, "", err
 	}
 	schema, sum, err := DescribeKeyspaceSchema(k8sClient, namespace, pods[0], container, keyspace)
+	if err != nil {
+		return nil, "", err
+	}
 
 	return schema, sum, nil
 }

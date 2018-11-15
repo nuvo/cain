@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// GetPods returns a slice of strings of pod names by namespace and selector
 func GetPods(iClient interface{}, namespace, selector string) ([]string, error) {
 
 	k8sClient := *iClient.(*skbn.K8sClient)
