@@ -62,6 +62,18 @@
   version = "v1.15.75"
 
 [[projects]]
+  digest = "1:49ea765e340f3907fc52ab1cc23bf9698d2d4fa9db14673710879d2ae2d22a9a"
+  name = "github.com/djherbis/buffer"
+  packages = [
+    ".",
+    "limio",
+    "wrapio",
+  ]
+  pruneopts = "UT"
+  revision = "4972e2bf4a27dbd7c43140c959b85e8c1d2f5536"
+  version = "v1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:ecdc8e0fe3bc7d549af1c9c36acf3820523b707d6c071b6d0c3860882c6f7b42"
   name = "github.com/docker/spdystream"
@@ -200,15 +212,15 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:16c04d2fad8675c7da75b14d19ae717e5987217cacd235aea15fea256b27a7c0"
+  digest = "1:3494cb9668947d277261c83dc2d56c6be5937a3e2416994b6c627788c2f3fcd7"
   name = "github.com/nuvo/skbn"
   packages = [
     "pkg/skbn",
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "111ac03971d7d98c3940ad9fef0a40953088c880"
-  version = "0.2.0"
+  revision = "03fffe411df5d04fc5d5e90f1bafaea20f6f5a19"
+  version = "0.3.0"
 
 [[projects]]
   branch = "master"
@@ -333,6 +345,14 @@
   pruneopts = "UT"
   revision = "4a4468ece617fc8205e99368fa2200e9d1fad421"
   version = "v1.3.0"
+
+[[projects]]
+  digest = "1:5aebed51f26a49cb77a0c34d1328a0d29839e7a1204b14ff8e26a3df8ec61736"
+  name = "gopkg.in/djherbis/nio.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "824ca9017eeb2a422fdda7ae9dba05d3ab019dfa"
+  version = "v2.0.3"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
