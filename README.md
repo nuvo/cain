@@ -54,13 +54,13 @@ Usage:
   cain backup [flags]
 
 Flags:
-  -c, --container string   container name to act on (default "cassandra")
-      --dst string         destination to backup to. Example: s3://bucket/cassandra
-  -h, --help               help for backup
-  -k, --keyspace string    keyspace to act on
-  -n, --namespace string   namespace to find cassandra cluster
-  -p, --parallel int       number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
-  -l, --selector string    selector to filter on
+  -b, --buffer-size float   in memory buffer size (MB) to use for files copy (buffer per file) (default 6.75)
+  -c, --container string    container name to act on (default "cassandra")
+      --dst string          destination to backup to. Example: s3://bucket/cassandra
+  -k, --keyspace string     keyspace to act on
+  -n, --namespace string    namespace to find cassandra cluster
+  -p, --parallel int        number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
+  -l, --selector string     selector to filter on
 ```
 
 #### Examples
@@ -104,14 +104,14 @@ Usage:
   cain restore [flags]
 
 Flags:
-  -c, --container string   container name to act on (default "cassandra")
-  -h, --help               help for restore
-  -k, --keyspace string    keyspace to act on
-  -n, --namespace string   namespace to find cassandra cluster
-  -p, --parallel int       number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
-  -l, --selector string    selector to filter on
-      --src string         source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name
-  -t, --tag string         tag to restore
+  -b, --buffer-size float   in memory buffer size (MB) to use for files copy (buffer per file) (default 6.75)
+  -c, --container string    container name to act on (default "cassandra")
+  -k, --keyspace string     keyspace to act on
+  -n, --namespace string    namespace to find cassandra cluster
+  -p, --parallel int        number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
+  -l, --selector string     selector to filter on
+      --src string          source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name
+  -t, --tag string          tag to restore
 ```
 
 #### Examples
