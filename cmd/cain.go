@@ -37,12 +37,13 @@ func NewRootCmd(args []string) *cobra.Command {
 }
 
 type backupCmd struct {
-	namespace string
-	selector  string
-	container string
-	keyspace  string
-	dst       string
-	parallel  int
+	namespace  string
+	selector   string
+	container  string
+	keyspace   string
+	dst        string
+	parallel   int
+	bufferSize float64
 
 	out io.Writer
 }
@@ -56,7 +57,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Short: "backup cassandra cluster to cloud storage",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if _, err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel); err != nil {
+			if _, err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel, b.bufferSize); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -69,18 +70,20 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&b.keyspace, "keyspace", "k", "", "keyspace to act on")
 	f.StringVar(&b.dst, "dst", "", "destination to backup to. Example: s3://bucket/cassandra")
 	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
+	f.Float64VarP(&b.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
 
 	return cmd
 }
 
 type restoreCmd struct {
-	src       string
-	keyspace  string
-	tag       string
-	namespace string
-	selector  string
-	container string
-	parallel  int
+	src        string
+	keyspace   string
+	tag        string
+	namespace  string
+	selector   string
+	container  string
+	parallel   int
+	bufferSize float64
 
 	out io.Writer
 }
@@ -94,7 +97,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		Short: "restore cassandra cluster from cloud storage",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Restore(r.src, r.keyspace, r.tag, r.namespace, r.selector, r.container, r.parallel); err != nil {
+			if err := cain.Restore(r.src, r.keyspace, r.tag, r.namespace, r.selector, r.container, r.parallel, r.bufferSize); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -108,6 +111,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
 	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to act on")
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
+	f.Float64VarP(&r.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
 
 	return cmd
 }

@@ -1,6 +1,7 @@
 package cain
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strings"
@@ -123,7 +124,8 @@ func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 
 func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, command []string) (string, error) {
 	command = append([]string{"nodetool"}, command...)
-	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
+	stdout := new(bytes.Buffer)
+	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 	if len(stderr) != 0 {
 		return "", fmt.Errorf("STDERR: " + (string)(stderr))
 	}
@@ -131,7 +133,7 @@ func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, comma
 		return "", err
 	}
 
-	return (string)(stdout), nil
+	return stdout.String(), nil
 }
 
 func printOutput(output, pod string) {

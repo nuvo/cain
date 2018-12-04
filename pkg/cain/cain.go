@@ -9,7 +9,7 @@ import (
 )
 
 // Backup performs backup
-func Backup(namespace, selector, container, keyspace, dst string, parallel int) (string, error) {
+func Backup(namespace, selector, container, keyspace, dst string, parallel int, bufferSize float64) (string, error) {
 	log.Println("Backup started!")
 	dstPrefix, dstPath := utils.SplitInTwo(dst, "://")
 
@@ -45,7 +45,7 @@ func Backup(namespace, selector, container, keyspace, dst string, parallel int) 
 	}
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, parallel); err != nil {
+	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, parallel, bufferSize); err != nil {
 		return "", err
 	}
 
@@ -57,7 +57,7 @@ func Backup(namespace, selector, container, keyspace, dst string, parallel int) 
 }
 
 // Restore performs restore
-func Restore(src, keyspace, tag, namespace, selector, container string, parallel int) error {
+func Restore(src, keyspace, tag, namespace, selector, container string, parallel int, bufferSize float64) error {
 	log.Println("Restore started!")
 	srcPrefix, srcBasePath := utils.SplitInTwo(src, "://")
 
@@ -102,7 +102,7 @@ func Restore(src, keyspace, tag, namespace, selector, container string, parallel
 	TruncateTables(k8sClient, namespace, container, keyspace, existingPods, tablesToRefresh, materializedViews)
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, parallel); err != nil {
+	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, parallel, bufferSize); err != nil {
 		return err
 	}
 

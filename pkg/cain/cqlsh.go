@@ -1,6 +1,7 @@
 package cain
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"log"
@@ -26,7 +27,8 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 	dstBasePath := filepath.Join(dstPath, namespace, clusterName, keyspace, sum)
 	schemaToPath := filepath.Join(dstBasePath, "schema.cql")
 
-	if err := skbn.Upload(iDstClient, dstPrefix, schemaToPath, "", schema); err != nil {
+	reader := bytes.NewReader(schema)
+	if err := skbn.Upload(iDstClient, dstPrefix, schemaToPath, "", reader); err != nil {
 		return "", nil
 	}
 
@@ -108,7 +110,8 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
 	command = append([]string{"cqlsh", "-e"}, command...)
-	stdout, stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil)
+	stdout := new(bytes.Buffer)
+	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 
 	if len(stderr) != 0 {
 		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
@@ -117,7 +120,7 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 		return nil, err
 	}
 
-	return removeWarning(stdout), nil
+	return removeWarning(stdout.Bytes()), nil
 }
 
 func removeWarning(b []byte) []byte {
