@@ -1,14 +1,14 @@
 [[constraint]]
   name = "github.com/nuvo/skbn"
-  version = "0.3.0"
+  version = "0.4.0"
 
 [[constraint]]
   name = "github.com/spf13/cobra"
   version = "0.0.3"
 
 [[constraint]]
+  branch = "release-1.13"
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.12.2"
 
 [prune]
   go-tests = true
