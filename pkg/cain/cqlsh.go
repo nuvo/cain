@@ -40,13 +40,31 @@ func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, k
 	command := []string{fmt.Sprintf("DESC %s;", keyspace)}
 	schema, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 	if err != nil {
-		return nil, "", fmt.Errorf("Could not describe schema. make sure a schema exists for keyspace \"%s\". %s", keyspace, err)
+		return nil, "", fmt.Errorf("Could not describe schema. make sure a schema exists for keyspace \"%s\" or restore it using \"--schema\". %s", keyspace, err)
 	}
 	h := sha256.New()
 	h.Write(schema)
 	sum := fmt.Sprintf("%x", h.Sum(nil))[0:6]
 
 	return schema, sum, nil
+}
+
+// RestoreKeyspaceSchema restores a keyspace schema
+func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath, namespace, pod, container, keyspace, schema string, parallel int, bufferSize float64) (string, error) {
+	schemaTmpFile := fmt.Sprintf("/tmp/%s/schema.cql", keyspace)
+	fromTo := skbn.FromToPair{
+		FromPath: filepath.Join(srcPath, keyspace, schema, "schema.cql"),
+		ToPath:   filepath.Join(namespace, pod, container, schemaTmpFile),
+	}
+	if err := skbn.PerformCopy(srcClient, iK8sClient, srcPrefix, "k8s", []skbn.FromToPair{fromTo}, parallel, bufferSize); err != nil {
+		return "", err
+	}
+	if _, err := CqlshF(iK8sClient, namespace, pod, container, schemaTmpFile); err != nil {
+		return "", err
+	}
+	_, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace)
+
+	return sum, err
 }
 
 // TruncateTables truncates the provided tables in all pods
@@ -110,6 +128,24 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
 	command = append([]string{"cqlsh", "-e"}, command...)
+	stdout := new(bytes.Buffer)
+	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
+
+	if len(stderr) != 0 {
+		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return removeWarning(stdout.Bytes()), nil
+}
+
+// CqlshF executes cqlsh -f file in a given pod
+func CqlshF(iK8sClient interface{}, namespace, pod, container string, file string) ([]byte, error) {
+	k8sClient := iK8sClient.(*skbn.K8sClient)
+
+	command := []string{"cqlsh", "-f", file}
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 

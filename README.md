@@ -11,6 +11,7 @@ Cain is a backup and restore tool for Cassandra on Kubernetes. It is named after
 Cain supports the following cloud storage services:
 
 * AWS S3
+* Minio S3
 * Azure Blob Storage
 
 Cain is now an official part of the Helm [incubator/cassandra](https://github.com/helm/charts/tree/master/incubator/cassandra) chart!
@@ -109,6 +110,7 @@ Flags:
   -k, --keyspace string     keyspace to act on
   -n, --namespace string    namespace to find cassandra cluster
   -p, --parallel int        number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
+  -s, --schema string       schema version to restore (optional)
   -l, --selector string     selector to filter on
       --src string          source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name
   -t, --tag string          tag to restore

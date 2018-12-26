@@ -1,6 +1,7 @@
 package cain
 
 import (
+	"fmt"
 	"log"
 	"path/filepath"
 
@@ -100,8 +101,21 @@ func Restore(o RestoreOptions) error {
 	log.Println("Getting current schema")
 	_, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, existingPods[0], o.Container, o.Keyspace)
 	if err != nil {
-		return err
+		if o.Schema == "" {
+			return err
+		}
+		log.Println("Schema not found, restoring schema", o.Schema)
+		sum, err = RestoreKeyspaceSchema(srcClient, k8sClient, srcPrefix, srcBasePath, o.Namespace, existingPods[0], o.Container, o.Keyspace, o.Schema, o.Parallel, o.BufferSize)
+		if err != nil {
+			return err
+		}
+		log.Println("Restored schema:", sum)
 	}
+
+	if o.Schema != "" && sum != o.Schema {
+		return fmt.Errorf("specified schema %s is not the same as found schema %s", o.Schema, sum)
+	}
+
 	log.Println("Found schema:", sum)
 
 	log.Println("Calculating paths. This may take a while...")

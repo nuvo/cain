@@ -157,7 +157,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&r.src, "src", "", "source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name")
 	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to act on")
 	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
-	f.StringVarP(&r.schema, "schema", "s", "", "schema to restore")
+	f.StringVarP(&r.schema, "schema", "s", "", "schema version to restore (optional)")
 	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
 	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
 	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to act on")
