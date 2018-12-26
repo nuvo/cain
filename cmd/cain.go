@@ -68,7 +68,16 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if _, err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel, b.bufferSize); err != nil {
+			options := cain.BackupOptions{
+				Namespace:  b.namespace,
+				Selector:   b.selector,
+				Container:  b.container,
+				Keyspace:   b.keyspace,
+				Dst:        b.dst,
+				Parallel:   b.parallel,
+				BufferSize: b.bufferSize,
+			}
+			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -90,6 +99,7 @@ type restoreCmd struct {
 	src        string
 	keyspace   string
 	tag        string
+	schema     string
 	namespace  string
 	selector   string
 	container  string
@@ -120,7 +130,18 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cain.Restore(r.src, r.keyspace, r.tag, r.namespace, r.selector, r.container, r.parallel, r.bufferSize); err != nil {
+			options := cain.RestoreOptions{
+				Src:        r.src,
+				Keyspace:   r.keyspace,
+				Tag:        r.tag,
+				Schema:     r.schema,
+				Namespace:  r.namespace,
+				Selector:   r.selector,
+				Container:  r.container,
+				Parallel:   r.parallel,
+				BufferSize: r.bufferSize,
+			}
+			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -130,6 +151,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&r.src, "src", "", "source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name")
 	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to act on")
 	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
+	f.StringVarP(&r.schema, "schema", "s", "", "schema to restore")
 	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
 	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
 	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to act on")
@@ -164,7 +186,13 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			schema, sum, err := cain.Schema(s.namespace, s.selector, s.container, s.keyspace)
+			options := cain.SchemaOptions{
+				Namespace: s.namespace,
+				Selector:  s.selector,
+				Container: s.container,
+				Keyspace:  s.keyspace,
+			}
+			schema, sum, err := cain.Schema(options)
 			if err != nil {
 				log.Fatal(err)
 			}

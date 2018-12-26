@@ -8,10 +8,21 @@ import (
 	"github.com/nuvo/skbn/pkg/skbn"
 )
 
+// BackupOptions are the options to pass to Backup
+type BackupOptions struct {
+	Namespace  string
+	Selector   string
+	Container  string
+	Keyspace   string
+	Dst        string
+	Parallel   int
+	BufferSize float64
+}
+
 // Backup performs backup
-func Backup(namespace, selector, container, keyspace, dst string, parallel int, bufferSize float64) (string, error) {
+func Backup(o BackupOptions) (string, error) {
 	log.Println("Backup started!")
-	dstPrefix, dstPath := utils.SplitInTwo(dst, "://")
+	dstPrefix, dstPath := utils.SplitInTwo(o.Dst, "://")
 
 	if err := skbn.TestImplementationsExist("k8s", dstPrefix); err != nil {
 		return "", err
@@ -24,42 +35,55 @@ func Backup(namespace, selector, container, keyspace, dst string, parallel int, 
 	}
 
 	log.Println("Getting pods")
-	pods, err := utils.GetPods(k8sClient, namespace, selector)
+	pods, err := utils.GetPods(k8sClient, o.Namespace, o.Selector)
 	if err != nil {
 		return "", err
 	}
 
 	log.Println("Backing up schema")
-	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, namespace, pods[0], container, keyspace, dstPrefix, dstPath)
+	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath)
 	if err != nil {
 		return "", err
 	}
 
 	log.Println("Taking snapshots")
-	tag := TakeSnapshots(k8sClient, pods, namespace, container, keyspace)
+	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace)
 
 	log.Println("Calculating paths. This may take a while...")
-	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, namespace, container, keyspace, tag, dstBasePath)
+	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, dstBasePath)
 	if err != nil {
 		return "", err
 	}
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, parallel, bufferSize); err != nil {
+	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, o.Parallel, o.BufferSize); err != nil {
 		return "", err
 	}
 
 	log.Println("Clearing snapshots")
-	ClearSnapshots(k8sClient, pods, namespace, container, keyspace, tag)
+	ClearSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag)
 
 	log.Println("All done!")
 	return tag, nil
 }
 
+// RestoreOptions are the options to pass to Restore
+type RestoreOptions struct {
+	Src        string
+	Keyspace   string
+	Tag        string
+	Schema     string
+	Namespace  string
+	Selector   string
+	Container  string
+	Parallel   int
+	BufferSize float64
+}
+
 // Restore performs restore
-func Restore(src, keyspace, tag, namespace, selector, container string, parallel int, bufferSize float64) error {
+func Restore(o RestoreOptions) error {
 	log.Println("Restore started!")
-	srcPrefix, srcBasePath := utils.SplitInTwo(src, "://")
+	srcPrefix, srcBasePath := utils.SplitInTwo(o.Src, "://")
 
 	log.Println("Getting clients")
 	srcClient, k8sClient, err := skbn.GetClients(srcPrefix, "k8s", srcBasePath, "")
@@ -68,21 +92,21 @@ func Restore(src, keyspace, tag, namespace, selector, container string, parallel
 	}
 
 	log.Println("Getting pods")
-	existingPods, err := utils.GetPods(k8sClient, namespace, selector)
+	existingPods, err := utils.GetPods(k8sClient, o.Namespace, o.Selector)
 	if err != nil {
 		return err
 	}
 
 	log.Println("Getting current schema")
-	_, sum, err := DescribeKeyspaceSchema(k8sClient, namespace, existingPods[0], container, keyspace)
+	_, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, existingPods[0], o.Container, o.Keyspace)
 	if err != nil {
 		return err
 	}
 	log.Println("Found schema:", sum)
 
 	log.Println("Calculating paths. This may take a while...")
-	srcPath := filepath.Join(srcBasePath, keyspace, sum, tag)
-	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsSrcToK8s(srcClient, k8sClient, srcPrefix, srcPath, srcBasePath, namespace, container)
+	srcPath := filepath.Join(srcBasePath, o.Keyspace, sum, o.Tag)
+	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsSrcToK8s(srcClient, k8sClient, srcPrefix, srcPath, srcBasePath, o.Namespace, o.Container)
 	if err != nil {
 		return err
 	}
@@ -93,37 +117,45 @@ func Restore(src, keyspace, tag, namespace, selector, container string, parallel
 	}
 
 	log.Println("Getting materialized views to exclude")
-	materializedViews, err := GetMaterializedViews(k8sClient, namespace, container, existingPods[0], keyspace)
+	materializedViews, err := GetMaterializedViews(k8sClient, o.Namespace, o.Container, existingPods[0], o.Keyspace)
 	if err != nil {
 		return err
 	}
 
 	log.Println("Truncating tables")
-	TruncateTables(k8sClient, namespace, container, keyspace, existingPods, tablesToRefresh, materializedViews)
+	TruncateTables(k8sClient, o.Namespace, o.Container, o.Keyspace, existingPods, tablesToRefresh, materializedViews)
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, parallel, bufferSize); err != nil {
+	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, o.Parallel, o.BufferSize); err != nil {
 		return err
 	}
 
 	log.Println("Refreshing tables")
-	RefreshTables(k8sClient, namespace, container, keyspace, podsToBeRestored, tablesToRefresh)
+	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh)
 
 	log.Println("All done!")
 	return nil
 }
 
+// SchemaOptions are the options to pass to Schema
+type SchemaOptions struct {
+	Namespace string
+	Selector  string
+	Container string
+	Keyspace  string
+}
+
 // Schema gets the schema of the cassandra cluster
-func Schema(namespace, selector, container, keyspace string) ([]byte, string, error) {
+func Schema(o SchemaOptions) ([]byte, string, error) {
 	k8sClient, err := skbn.GetClientToK8s()
 	if err != nil {
 		return nil, "", err
 	}
-	pods, err := utils.GetPods(k8sClient, namespace, selector)
+	pods, err := utils.GetPods(k8sClient, o.Namespace, o.Selector)
 	if err != nil {
 		return nil, "", err
 	}
-	schema, sum, err := DescribeKeyspaceSchema(k8sClient, namespace, pods[0], container, keyspace)
+	schema, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, pods[0], o.Container, o.Keyspace)
 	if err != nil {
 		return nil, "", err
 	}
