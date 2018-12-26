@@ -89,11 +89,10 @@ cain backup \
 ### Restore Cassandra backup from cloud storage
 
 Cain performs a restore in the following way:
-1. Truncate all tables in `keyspace`.
-2. Copy files from the specified `src` (under `keyspace/<keyspaceSchemaHash>/tag/`) - restore is only possible for the same keyspace schema.
-3. Load new data using `nodetool refresh`.
-
-* Cain does not currently restore the schema (must be loaded restoring).
+1. Restore schema if `schema` is specified.
+2. Truncate all tables in `keyspace`.
+3. Copy files from the specified `src` (under `keyspace/<keyspaceSchemaHash>/tag/`) - restore is only possible for the same keyspace schema.
+4. Load new data using `nodetool refresh`.
 
 #### Usage
 
