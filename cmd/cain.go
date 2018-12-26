@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/nuvo/cain/pkg/cain"
 
@@ -56,6 +58,12 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Use:   "backup",
 		Short: "backup cassandra cluster to cloud storage",
 		Long:  ``,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if strings.HasSuffix(strings.TrimRight(b.dst, "/"), b.keyspace) {
+				log.Println("WARNING: Destination path should not include the name of the keyspace")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if _, err := cain.Backup(b.namespace, b.selector, b.container, b.keyspace, b.dst, b.parallel, b.bufferSize); err != nil {
 				log.Fatal(err)
@@ -96,6 +104,15 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		Use:   "restore",
 		Short: "restore cassandra cluster from cloud storage",
 		Long:  ``,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if r.tag == "" {
+				return errors.New("tag can not be empty")
+			}
+			if strings.HasSuffix(strings.TrimRight(r.src, "/"), r.keyspace) {
+				log.Println("WARNING: Source path should not include the name of the keyspace")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cain.Restore(r.src, r.keyspace, r.tag, r.namespace, r.selector, r.container, r.parallel, r.bufferSize); err != nil {
 				log.Fatal(err)
