@@ -59,6 +59,9 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Short: "backup cassandra cluster to cloud storage",
 		Long:  ``,
 		Args: func(cmd *cobra.Command, args []string) error {
+			if b.dst == "" {
+				return errors.New("dst can not be empty")
+			}
 			if b.keyspace == "" {
 				return errors.New("keyspace can not be empty")
 			}
@@ -118,6 +121,9 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		Short: "restore cassandra cluster from cloud storage",
 		Long:  ``,
 		Args: func(cmd *cobra.Command, args []string) error {
+			if r.src == "" {
+				return errors.New("src can not be empty")
+			}
 			if r.tag == "" {
 				return errors.New("tag can not be empty")
 			}
