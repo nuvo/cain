@@ -40,7 +40,7 @@ func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, k
 	command := []string{fmt.Sprintf("DESC %s;", keyspace)}
 	schema, err := Cqlsh(iK8sClient, namespace, pod, container, command)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("Could not describe schema. make sure a schema exists for keyspace \"%s\". %s", keyspace, err)
 	}
 	h := sha256.New()
 	h.Write(schema)
