@@ -59,6 +59,9 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		Short: "backup cassandra cluster to cloud storage",
 		Long:  ``,
 		Args: func(cmd *cobra.Command, args []string) error {
+			if b.keyspace == "" {
+				return errors.New("keyspace can not be empty")
+			}
 			if strings.HasSuffix(strings.TrimRight(b.dst, "/"), b.keyspace) {
 				log.Println("WARNING: Destination path should not include the name of the keyspace")
 			}
@@ -108,6 +111,9 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 			if r.tag == "" {
 				return errors.New("tag can not be empty")
 			}
+			if r.keyspace == "" {
+				return errors.New("keyspace can not be empty")
+			}
 			if strings.HasSuffix(strings.TrimRight(r.src, "/"), r.keyspace) {
 				log.Println("WARNING: Source path should not include the name of the keyspace")
 			}
@@ -151,6 +157,12 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 		Use:   "schema",
 		Short: "get schema of cassandra cluster",
 		Long:  ``,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if s.keyspace == "" {
+				return errors.New("keyspace can not be empty")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			schema, sum, err := cain.Schema(s.namespace, s.selector, s.container, s.keyspace)
 			if err != nil {
