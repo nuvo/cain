@@ -11,13 +11,14 @@ import (
 
 // BackupOptions are the options to pass to Backup
 type BackupOptions struct {
-	Namespace  string
-	Selector   string
-	Container  string
-	Keyspace   string
-	Dst        string
-	Parallel   int
-	BufferSize float64
+	Namespace        string
+	Selector         string
+	Container        string
+	Keyspace         string
+	Dst              string
+	Parallel         int
+	BufferSize       float64
+	CassandraDataDir string
 }
 
 // Backup performs backup
