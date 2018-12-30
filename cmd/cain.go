@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/nuvo/cain/pkg/cain"
-
+	"github.com/nuvo/cain/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -39,13 +39,14 @@ func NewRootCmd(args []string) *cobra.Command {
 }
 
 type backupCmd struct {
-	namespace  string
-	selector   string
-	container  string
-	keyspace   string
-	dst        string
-	parallel   int
-	bufferSize float64
+	namespace        string
+	selector         string
+	container        string
+	keyspace         string
+	dst              string
+	parallel         int
+	bufferSize       float64
+	cassandraDataDir string
 
 	out io.Writer
 }
@@ -72,13 +73,14 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options := cain.BackupOptions{
-				Namespace:  b.namespace,
-				Selector:   b.selector,
-				Container:  b.container,
-				Keyspace:   b.keyspace,
-				Dst:        b.dst,
-				Parallel:   b.parallel,
-				BufferSize: b.bufferSize,
+				Namespace:        b.namespace,
+				Selector:         b.selector,
+				Container:        b.container,
+				Keyspace:         b.keyspace,
+				Dst:              b.dst,
+				Parallel:         b.parallel,
+				BufferSize:       b.bufferSize,
+				CassandraDataDir: b.cassandraDataDir,
 			}
 			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
@@ -94,21 +96,23 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&b.dst, "dst", "", "destination to backup to. Example: s3://bucket/cassandra")
 	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 	f.Float64VarP(&b.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
+	f.StringVarP(&b.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 
 	return cmd
 }
 
 type restoreCmd struct {
-	src        string
-	keyspace   string
-	tag        string
-	schema     string
-	namespace  string
-	selector   string
-	container  string
-	parallel   int
-	bufferSize float64
-	userGroup  string
+	src              string
+	keyspace         string
+	tag              string
+	schema           string
+	namespace        string
+	selector         string
+	container        string
+	parallel         int
+	bufferSize       float64
+	userGroup        string
+	cassandraDataDir string
 
 	out io.Writer
 }
@@ -138,16 +142,17 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options := cain.RestoreOptions{
-				Src:        r.src,
-				Keyspace:   r.keyspace,
-				Tag:        r.tag,
-				Schema:     r.schema,
-				Namespace:  r.namespace,
-				Selector:   r.selector,
-				Container:  r.container,
-				Parallel:   r.parallel,
-				BufferSize: r.bufferSize,
-				UserGroup:  r.userGroup,
+				Src:              r.src,
+				Keyspace:         r.keyspace,
+				Tag:              r.tag,
+				Schema:           r.schema,
+				Namespace:        r.namespace,
+				Selector:         r.selector,
+				Container:        r.container,
+				Parallel:         r.parallel,
+				BufferSize:       r.bufferSize,
+				UserGroup:        r.userGroup,
+				CassandraDataDir: r.cassandraDataDir,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
@@ -166,6 +171,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
 	f.StringVar(&r.userGroup, "user-group", "cassandra:cassandra", "user and group who should own restored files")
+	f.StringVarP(&r.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 
 	return cmd
 }

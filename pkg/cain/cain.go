@@ -11,13 +11,14 @@ import (
 
 // BackupOptions are the options to pass to Backup
 type BackupOptions struct {
-	Namespace  string
-	Selector   string
-	Container  string
-	Keyspace   string
-	Dst        string
-	Parallel   int
-	BufferSize float64
+	Namespace        string
+	Selector         string
+	Container        string
+	Keyspace         string
+	Dst              string
+	Parallel         int
+	BufferSize       float64
+	CassandraDataDir string
 }
 
 // Backup performs backup
@@ -51,7 +52,7 @@ func Backup(o BackupOptions) (string, error) {
 	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace)
 
 	log.Println("Calculating paths. This may take a while...")
-	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, dstBasePath)
+	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, dstBasePath, o.CassandraDataDir)
 	if err != nil {
 		return "", err
 	}
@@ -70,16 +71,17 @@ func Backup(o BackupOptions) (string, error) {
 
 // RestoreOptions are the options to pass to Restore
 type RestoreOptions struct {
-	Src        string
-	Keyspace   string
-	Tag        string
-	Schema     string
-	Namespace  string
-	Selector   string
-	Container  string
-	Parallel   int
-	BufferSize float64
-	UserGroup  string
+	Src              string
+	Keyspace         string
+	Tag              string
+	Schema           string
+	Namespace        string
+	Selector         string
+	Container        string
+	Parallel         int
+	BufferSize       float64
+	UserGroup        string
+	CassandraDataDir string
 }
 
 // Restore performs restore
@@ -121,7 +123,7 @@ func Restore(o RestoreOptions) error {
 
 	log.Println("Calculating paths. This may take a while...")
 	srcPath := filepath.Join(srcBasePath, o.Keyspace, sum, o.Tag)
-	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsSrcToK8s(srcClient, k8sClient, srcPrefix, srcPath, srcBasePath, o.Namespace, o.Container)
+	fromToPaths, podsToBeRestored, tablesToRefresh, err := utils.GetFromAndToPathsSrcToK8s(srcClient, k8sClient, srcPrefix, srcPath, srcBasePath, o.Namespace, o.Container, o.CassandraDataDir)
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Changing files ownership")
-	if err := utils.ChangeFilesOwnership(k8sClient, existingPods, o.Namespace, o.Container, o.UserGroup); err != nil {
+	if err := utils.ChangeFilesOwnership(k8sClient, existingPods, o.Namespace, o.Container, o.UserGroup, o.CassandraDataDir); err != nil {
 		return err
 	}
 

@@ -8,15 +8,13 @@ import (
 	"github.com/nuvo/skbn/pkg/skbn"
 )
 
-const cassandraDataDir = "/var/lib/cassandra/data"
-
 // GetFromAndToPathsFromK8s aggregates paths from all pods
-func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, container, keyspace, tag, dstBasePath string) ([]skbn.FromToPair, error) {
+func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, container, keyspace, tag, dstBasePath, cassandraDataDir string) ([]skbn.FromToPair, error) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	var fromToPathsAllPods []skbn.FromToPair
 	for _, pod := range pods {
 
-		fromToPaths, err := GetFromAndToPathsK8sToDst(k8sClient, namespace, pod, container, keyspace, tag, dstBasePath)
+		fromToPaths, err := GetFromAndToPathsK8sToDst(k8sClient, namespace, pod, container, keyspace, tag, dstBasePath, cassandraDataDir)
 		if err != nil {
 			return nil, err
 		}
@@ -27,7 +25,7 @@ func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, con
 }
 
 // GetFromAndToPathsSrcToK8s performs a path mapping between a source and Kubernetes
-func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcPath, srcBasePath, namespace, container string) ([]skbn.FromToPair, []string, []string, error) {
+func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcPath, srcBasePath, namespace, container, cassandraDataDir string) ([]skbn.FromToPair, []string, []string, error) {
 	var fromToPaths []skbn.FromToPair
 
 	filesToCopyRelativePaths, err := skbn.GetListOfFiles(srcClient, srcPrefix, srcPath)
@@ -56,7 +54,7 @@ func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcP
 }
 
 // GetFromAndToPathsK8sToDst performs a path mapping between Kubernetes and a destination
-func GetFromAndToPathsK8sToDst(k8sClient interface{}, namespace, pod, container, keyspace, tag, dstBasePath string) ([]skbn.FromToPair, error) {
+func GetFromAndToPathsK8sToDst(k8sClient interface{}, namespace, pod, container, keyspace, tag, dstBasePath, cassandraDataDir string) ([]skbn.FromToPair, error) {
 	var fromToPaths []skbn.FromToPair
 
 	pathPrfx := filepath.Join(namespace, pod, container, cassandraDataDir)
@@ -146,7 +144,7 @@ func PathFromSrcToK8s(k8sClient interface{}, fromPath, cassandraDataDir, srcBase
 }
 
 // ChangeFilesOwnership changes the ownership of files after restoring them
-func ChangeFilesOwnership(iK8sClient interface{}, pods []string, namespace, container, userGroup string) error {
+func ChangeFilesOwnership(iK8sClient interface{}, pods []string, namespace, container, userGroup, cassandraDataDir string) error {
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 	command := []string{"chown", "-R", userGroup, cassandraDataDir}
 	for _, pod := range pods {
