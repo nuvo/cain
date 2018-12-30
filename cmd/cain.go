@@ -96,7 +96,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&b.dst, "dst", "", "destination to backup to. Example: s3://bucket/cassandra")
 	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 	f.Float64VarP(&b.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
-	f.StringVarP(&b.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory")
+	f.StringVarP(&b.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 
 	return cmd
 }
@@ -171,7 +171,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
 	f.StringVar(&r.userGroup, "user-group", "cassandra:cassandra", "user and group who should own restored files")
-	f.StringVarP(&r.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory")
+	f.StringVarP(&r.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 
 	return cmd
 }
