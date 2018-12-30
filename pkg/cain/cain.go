@@ -79,6 +79,7 @@ type RestoreOptions struct {
 	Container  string
 	Parallel   int
 	BufferSize float64
+	UserGroup  string
 }
 
 // Restore performs restore
@@ -141,6 +142,11 @@ func Restore(o RestoreOptions) error {
 
 	log.Println("Starting files copy")
 	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, o.Parallel, o.BufferSize); err != nil {
+		return err
+	}
+
+	log.Println("Changing files ownership")
+	if err := utils.ChangeFilesOwnership(k8sClient, existingPods, o.Namespace, o.Container, o.UserGroup); err != nil {
 		return err
 	}
 

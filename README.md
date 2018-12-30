@@ -113,6 +113,7 @@ Flags:
   -l, --selector string     selector to filter on
       --src string          source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name
   -t, --tag string          tag to restore
+      --user-group string   user and group who should own restored files (default "cassandra:cassandra")
 ```
 
 #### Examples

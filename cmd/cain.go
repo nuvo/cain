@@ -108,6 +108,7 @@ type restoreCmd struct {
 	container  string
 	parallel   int
 	bufferSize float64
+	userGroup  string
 
 	out io.Writer
 }
@@ -146,6 +147,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 				Container:  r.container,
 				Parallel:   r.parallel,
 				BufferSize: r.bufferSize,
+				UserGroup:  r.userGroup,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
@@ -163,6 +165,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to act on")
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
+	f.StringVar(&r.userGroup, "user-group", "cassandra:cassandra", "user and group who should own restored files")
 
 	return cmd
 }

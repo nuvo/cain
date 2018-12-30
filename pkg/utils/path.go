@@ -144,3 +144,19 @@ func PathFromSrcToK8s(k8sClient interface{}, fromPath, cassandraDataDir, srcBase
 
 	return toPath, nil
 }
+
+// ChangeFilesOwnership changes the ownership of files after restoring them
+func ChangeFilesOwnership(iK8sClient interface{}, pods []string, namespace, container, userGroup string) error {
+	k8sClient := iK8sClient.(*skbn.K8sClient)
+	command := []string{"chown", "-R", userGroup, cassandraDataDir}
+	for _, pod := range pods {
+		stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, nil)
+		if len(stderr) != 0 {
+			return fmt.Errorf("STDERR: " + (string)(stderr))
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
