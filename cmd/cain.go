@@ -42,11 +42,11 @@ type backupCmd struct {
 	namespace        string
 	selector         string
 	container        string
-	cassandraDataDir string
 	keyspace         string
 	dst              string
 	parallel         int
 	bufferSize       float64
+	cassandraDataDir string
 
 	out io.Writer
 }
@@ -102,16 +102,17 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 }
 
 type restoreCmd struct {
-	src        string
-	keyspace   string
-	tag        string
-	schema     string
-	namespace  string
-	selector   string
-	container  string
-	parallel   int
-	bufferSize float64
-	userGroup  string
+	src              string
+	keyspace         string
+	tag              string
+	schema           string
+	namespace        string
+	selector         string
+	container        string
+	parallel         int
+	bufferSize       float64
+	userGroup        string
+	cassandraDataDir string
 
 	out io.Writer
 }
@@ -141,16 +142,17 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options := cain.RestoreOptions{
-				Src:        r.src,
-				Keyspace:   r.keyspace,
-				Tag:        r.tag,
-				Schema:     r.schema,
-				Namespace:  r.namespace,
-				Selector:   r.selector,
-				Container:  r.container,
-				Parallel:   r.parallel,
-				BufferSize: r.bufferSize,
-				UserGroup:  r.userGroup,
+				Src:              r.src,
+				Keyspace:         r.keyspace,
+				Tag:              r.tag,
+				Schema:           r.schema,
+				Namespace:        r.namespace,
+				Selector:         r.selector,
+				Container:        r.container,
+				Parallel:         r.parallel,
+				BufferSize:       r.bufferSize,
+				UserGroup:        r.userGroup,
+				CassandraDataDir: r.cassandraDataDir,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
@@ -169,6 +171,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
 	f.StringVar(&r.userGroup, "user-group", "cassandra:cassandra", "user and group who should own restored files")
+	f.StringVarP(&r.cassandraDataDir, "cassandra-data-dir", "", "/var/lib/cassandra/data", "cassandra data directory")
 
 	return cmd
 }
