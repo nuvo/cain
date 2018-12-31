@@ -39,3 +39,16 @@ func GetBoolEnvVar(name string, defVal bool) bool {
 	}
 	return defVal
 }
+
+// GetFloat64EnvVar returns the default value if the variable is empty, else the value
+func GetFloat64EnvVar(name string, defVal float64) float64 {
+	val := os.Getenv(name)
+	if val == "" {
+		return defVal
+	}
+	iVal, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return defVal
+	}
+	return iVal
+}

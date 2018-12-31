@@ -89,14 +89,14 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	}
 	f := cmd.Flags()
 
-	f.StringVarP(&b.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
-	f.StringVarP(&b.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&b.container, "container", "c", "cassandra", "container name to act on")
-	f.StringVarP(&b.keyspace, "keyspace", "k", "", "keyspace to act on")
-	f.StringVar(&b.dst, "dst", "", "destination to backup to. Example: s3://bucket/cassandra")
-	f.IntVarP(&b.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
-	f.Float64VarP(&b.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
-	f.StringVarP(&b.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+	f.StringVarP(&b.namespace, "namespace", "n", utils.GetStringEnvVar("CAIN_NAMESPACE", "default"), "namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE")
+	f.StringVarP(&b.selector, "selector", "l", utils.GetStringEnvVar("CAIN_SELECTOR", "app=cassandra"), "selector to filter on. Overrides $CAIN_SELECTOR")
+	f.StringVarP(&b.container, "container", "c", utils.GetStringEnvVar("CAIN_CONTAINER", "cassandra"), "container name to act on. Overrides $CAIN_CONTAINER")
+	f.StringVarP(&b.keyspace, "keyspace", "k", utils.GetStringEnvVar("CAIN_KEYSPACE", ""), "keyspace to act on. Overrides $CAIN_KEYSPACE")
+	f.StringVar(&b.dst, "dst", utils.GetStringEnvVar("CAIN_DST", ""), "destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST")
+	f.IntVarP(&b.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
+	f.Float64VarP(&b.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
+	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 
 	return cmd
 }
@@ -161,17 +161,17 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	}
 	f := cmd.Flags()
 
-	f.StringVar(&r.src, "src", "", "source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name")
-	f.StringVarP(&r.keyspace, "keyspace", "k", "", "keyspace to act on")
-	f.StringVarP(&r.tag, "tag", "t", "", "tag to restore")
-	f.StringVarP(&r.schema, "schema", "s", "", "schema version to restore (optional)")
-	f.StringVarP(&r.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
-	f.StringVarP(&r.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&r.container, "container", "c", "cassandra", "container name to act on")
-	f.IntVarP(&r.parallel, "parallel", "p", 1, "number of files to copy in parallel. set this flag to 0 for full parallelism")
-	f.Float64VarP(&r.bufferSize, "buffer-size", "b", 6.75, "in memory buffer size (MB) to use for files copy (buffer per file)")
-	f.StringVar(&r.userGroup, "user-group", "cassandra:cassandra", "user and group who should own restored files")
-	f.StringVarP(&r.cassandraDataDir, "cassandra-data-dir", "", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+	f.StringVar(&r.src, "src", utils.GetStringEnvVar("CAIN_SRC", ""), "source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name. Overrides $CAIN_SRC")
+	f.StringVarP(&r.keyspace, "keyspace", "k", utils.GetStringEnvVar("CAIN_KEYSPACE", ""), "keyspace to act on. Overrides $CAIN_KEYSPACE")
+	f.StringVarP(&r.tag, "tag", "t", utils.GetStringEnvVar("CAIN_TAG", ""), "tag to restore. Overrides $CAIN_TAG")
+	f.StringVarP(&r.schema, "schema", "s", utils.GetStringEnvVar("CAIN_SCHEMA", ""), "schema version to restore (optional). Overrides $CAIN_SCHEMA")
+	f.StringVarP(&r.namespace, "namespace", "n", utils.GetStringEnvVar("CAIN_NAMESPACE", "default"), "namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE")
+	f.StringVarP(&r.selector, "selector", "l", utils.GetStringEnvVar("CAIN_SELECTOR", "app=cassandra"), "selector to filter on. Overrides $CAIN_SELECTOR")
+	f.StringVarP(&r.container, "container", "c", utils.GetStringEnvVar("CAIN_CONTAINER", "cassandra"), "container name to act on. Overrides $CAIN_CONTAINER")
+	f.IntVarP(&r.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
+	f.Float64VarP(&r.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
+	f.StringVar(&r.userGroup, "user-group", utils.GetStringEnvVar("CAIN_USER_GROUP", "cassandra:cassandra"), "user and group who should own restored files. Overrides $CAIN_USER_GROUP")
+	f.StringVar(&r.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 
 	return cmd
 }
@@ -221,14 +221,11 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 	}
 	f := cmd.Flags()
 
-	f.StringVarP(&s.namespace, "namespace", "n", "", "namespace to find cassandra cluster")
-	f.StringVarP(&s.selector, "selector", "l", "", "selector to filter on")
-	f.StringVarP(&s.container, "container", "c", "cassandra", "container name to act on")
-	f.StringVarP(&s.keyspace, "keyspace", "k", "", "keyspace to act on")
-	f.BoolVar(&s.sum, "sum", false, "print only checksum")
-
-	cmd.MarkFlagRequired("namespace")
-	cmd.MarkFlagRequired("selector")
+	f.StringVarP(&s.namespace, "namespace", "n", utils.GetStringEnvVar("CAIN_NAMESPACE", "default"), "namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE")
+	f.StringVarP(&s.selector, "selector", "l", utils.GetStringEnvVar("CAIN_SELECTOR", "app=cassandra"), "selector to filter on. Overrides $CAIN_SELECTOR")
+	f.StringVarP(&s.container, "container", "c", utils.GetStringEnvVar("CAIN_CONTAINER", "cassandra"), "container name to act on. Overrides $CAIN_CONTAINER")
+	f.StringVarP(&s.keyspace, "keyspace", "k", utils.GetStringEnvVar("CAIN_KEYSPACE", ""), "keyspace to act on. Overrides $CAIN_KEYSPACE")
+	f.BoolVar(&s.sum, "sum", utils.GetBoolEnvVar("CAIN_SUM", false), "print only checksum. Overrides $CAIN_SUM")
 
 	return cmd
 }

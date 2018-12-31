@@ -55,15 +55,14 @@ Usage:
   cain backup [flags]
 
 Flags:
-  -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file) (default 6.75)
+  -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
       --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
-  -c, --container string            container name to act on (default "cassandra")
-      --dst string                  destination to backup to. Example: s3://bucket/cassandra
-  -h, --help                        help for backup
-  -k, --keyspace string             keyspace to act on
-  -n, --namespace string            namespace to find cassandra cluster
-  -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
-  -l, --selector string             selector to filter on
+  -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
+      --dst string                  destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST
+  -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
+  -n, --namespace string            namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
+  -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
+  -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
 ```
 
 #### Examples
@@ -106,18 +105,17 @@ Usage:
   cain restore [flags]
 
 Flags:
-  -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file) (default 6.75)
+  -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
       --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
-  -c, --container string            container name to act on (default "cassandra")
-  -h, --help                        help for restore
-  -k, --keyspace string             keyspace to act on
-  -n, --namespace string            namespace to find cassandra cluster
-  -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism (default 1)
-  -s, --schema string               schema version to restore (optional)
-  -l, --selector string             selector to filter on
-      --src string                  source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name
-  -t, --tag string                  tag to restore
-      --user-group string           user and group who should own restored files (default "cassandra:cassandra")
+  -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
+  -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
+  -n, --namespace string            namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
+  -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
+  -s, --schema string               schema version to restore (optional). Overrides $CAIN_SCHEMA
+  -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
+      --src string                  source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name. Overrides $CAIN_SRC
+  -t, --tag string                  tag to restore. Overrides $CAIN_TAG
+      --user-group string           user and group who should own restored files. Overrides $CAIN_USER_GROUP (default "cassandra:cassandra")
 ```
 
 #### Examples
@@ -158,12 +156,11 @@ Usage:
   cain schema [flags]
 
 Flags:
-  -c, --container string   container name to act on (default "cassandra")
-  -h, --help               help for schema
-  -k, --keyspace string    keyspace to act on
-  -n, --namespace string   namespace to find cassandra cluster
-  -l, --selector string    selector to filter on
-      --sum                print only checksum
+  -c, --container string   container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
+  -k, --keyspace string    keyspace to act on. Overrides $CAIN_KEYSPACE
+  -n, --namespace string   namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
+  -l, --selector string    selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
+      --sum                print only checksum. Overrides $CAIN_SUM
 ```
 
 #### Examples
@@ -180,6 +177,30 @@ cain schema \
     -l release=cassandra \
     -k keyspace \
     --sum
+```
+
+## Environment variables support
+
+Cain commands support the usage of environment variables instead of flags. For example:
+The `backup` command can be executed as mentioned in the example:
+
+```
+cain backup \
+    -n default \
+    -l release=cassandra \
+    -k keyspace \
+    --dst s3://db-backup/cassandra
+```
+
+You can also set the appropriate envrionment variables (CAIN_FLAG, _ instead of -):
+
+```
+export CAIN_NAMESPACE=default
+export CAIN_SELECTOR=release=cassandra
+export CAIN_KEYSPACE=keyspace
+export CAIN_DST=s3://db-backup/cassandra
+
+cain backup
 ```
 
 ## Support for additional storage services
