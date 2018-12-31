@@ -158,3 +158,19 @@ func ChangeFilesOwnership(iK8sClient interface{}, pods []string, namespace, cont
 	}
 	return nil
 }
+
+// TestK8sDirectory checks if a path exists
+func TestK8sDirectory(iK8sClient interface{}, pods []string, namespace, container, cassandraDataDir string) error {
+	k8sClient := iK8sClient.(*skbn.K8sClient)
+	command := []string{"ls", cassandraDataDir}
+	for _, pod := range pods {
+		stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, nil)
+		if len(stderr) != 0 {
+			return fmt.Errorf("STDERR: " + (string)(stderr))
+		}
+		if err != nil {
+			return fmt.Errorf(cassandraDataDir + " does not exist. " + err.Error())
+		}
+	}
+	return nil
+}

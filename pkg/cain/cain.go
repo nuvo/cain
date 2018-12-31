@@ -42,6 +42,11 @@ func Backup(o BackupOptions) (string, error) {
 		return "", err
 	}
 
+	log.Println("Testing existence of data dir")
+	if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.CassandraDataDir); err != nil {
+		return "", err
+	}
+
 	log.Println("Backing up schema")
 	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath)
 	if err != nil {
@@ -98,6 +103,11 @@ func Restore(o RestoreOptions) error {
 	log.Println("Getting pods")
 	existingPods, err := utils.GetPods(k8sClient, o.Namespace, o.Selector)
 	if err != nil {
+		return err
+	}
+
+	log.Println("Testing existence of data dir")
+	if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.CassandraDataDir); err != nil {
 		return err
 	}
 
