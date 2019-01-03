@@ -1,4 +1,4 @@
-<img src="/logos/cassandra.png" width="500px" alt="cassandra logo">
+<img src="/logos/cassandra.png" width="200px" alt="cassandra logo">
 
 [![Release](https://img.shields.io/github/release/nuvo/cain.svg)](https://github.com/nuvo/cain/releases)
 [![Travis branch](https://img.shields.io/travis/nuvo/cain/master.svg)](https://travis-ci.org/nuvo/cain)
