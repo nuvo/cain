@@ -1,5 +1,3 @@
-<img src="/logos/cassandra.png" width="200px" alt="cassandra logo">
-
 [![Release](https://img.shields.io/github/release/nuvo/cain.svg)](https://github.com/nuvo/cain/releases)
 [![Travis branch](https://img.shields.io/travis/nuvo/cain/master.svg)](https://travis-ci.org/nuvo/cain)
 [![Docker Pulls](https://img.shields.io/docker/pulls/nuvo/cain.svg)](https://hub.docker.com/r/nuvo/cain/)
@@ -208,6 +206,19 @@ cain backup
 ## Support for additional storage services
 
 Since Cain uses [Skbn](https://github.com/nuvo/skbn), adding support for additional storage services is simple. Read [this post](https://medium.com/nuvo-group-tech/copy-files-and-directories-between-kubernetes-and-s3-d290ded9a5e0) for more information.
+
+## Skbn compatibility matrix
+
+| Cain version | Skbn version |
+|--------------|--------------|
+| 0.5.1        | 0.4.2        |
+| 0.5.0        | 0.4.1        |
+| 0.4.2        | 0.4.1        |
+| 0.4.1        | 0.4.1        |
+| 0.4.0        | 0.4.0        |
+| 0.3.0        | 0.3.0        |
+| 0.2.0        | 0.2.0        |
+| 0.1.0        | 0.1.1        |
 
 ## Credentials
 

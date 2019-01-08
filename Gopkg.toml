@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/nuvo/skbn"
-  version = "0.4.1"
+  version = "0.4.2"
 
 [[constraint]]
   name = "github.com/spf13/cobra"
