@@ -130,7 +130,7 @@ func IncBackup(o IncBackupOptions) (string, error) {
 	}
 
 	log.Println("All done!")
-	return tag, nil
+	return "Done", nil
 }
 
 // RestoreOptions are the options to pass to Restore

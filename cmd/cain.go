@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nuvo/cain/pkg/cain"
-	"github.com/nuvo/cain/pkg/utils"
+	"github.com/hailkomputer/cain/pkg/cain"
+	"github.com/hailkomputer/cain/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

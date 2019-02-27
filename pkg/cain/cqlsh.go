@@ -42,7 +42,7 @@ func ProcessKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, c
 		return "", err
 	}
 
-	schema, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace)
+	_, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace)
 	if err != nil {
 		return "", err
 	}
