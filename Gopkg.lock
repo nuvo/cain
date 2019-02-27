@@ -197,6 +197,17 @@
   version = "1.0.1"
 
 [[projects]]
+  digest = "1:f15ddb763c37d54554e39edd5073dd6a721e8560d73e934ad94305b8a0461c90"
+  name = "github.com/nuvo/cain"
+  packages = [
+    "pkg/cain",
+    "pkg/utils",
+  ]
+  pruneopts = "UT"
+  revision = "be0e30d2f2492dde912a165603005b4de2fb7cdc"
+  version = "0.5.1"
+
+[[projects]]
   digest = "1:0afbbd82a14657dbe53e816648bd4e76e8267b9bac030851500055baca6f90c5"
   name = "github.com/nuvo/skbn"
   packages = [
@@ -531,6 +542,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/nuvo/cain/pkg/cain",
+    "github.com/nuvo/cain/pkg/utils",
     "github.com/nuvo/skbn/pkg/skbn",
     "github.com/spf13/cobra",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

@@ -35,6 +35,23 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 	return dstBasePath, nil
 }
 
+// ProcessKeyspaceSchema gets the schema of the keyspace and returns the sum and destination base path
+func ProcessKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string) (string, error) {
+	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container)
+	if err != nil {
+		return "", err
+	}
+
+	schema, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace)
+	if err != nil {
+		return "", err
+	}
+
+	dstBasePath := filepath.Join(dstPath, namespace, clusterName, keyspace, sum)
+
+	return dstBasePath, nil
+}
+
 // DescribeKeyspaceSchema describes the schema of the keyspace
 func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, keyspace string) ([]byte, string, error) {
 	command := []string{fmt.Sprintf("DESC %s;", keyspace)}

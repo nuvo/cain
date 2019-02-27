@@ -101,6 +101,69 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	return cmd
 }
 
+type incBackupCmd struct {
+	namespace        string
+	selector         string
+	container        string
+	keyspace         string
+	dst              string
+	parallel         int
+	bufferSize       float64
+	cassandraDataDir string
+
+	out io.Writer
+}
+
+// NewIncBackupCmd performs a copy of incremental backup folders to cloud storage
+func NewIncBackupCmd(out io.Writer) *cobra.Command {
+	b := &incBackupCmd{out: out}
+
+	cmd := &cobra.Command{
+		Use:   "incremental",
+		Short: "backup cassandra cluster's incremental backup folders to cloud storage",
+		Long:  ``,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if b.dst == "" {
+				return errors.New("dst can not be empty")
+			}
+			if b.keyspace == "" {
+				return errors.New("keyspace can not be empty")
+			}
+			if strings.HasSuffix(strings.TrimRight(b.dst, "/"), b.keyspace) {
+				log.Println("WARNING: Destination path should not include the name of the keyspace")
+			}
+			return nil
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			options := cain.IncBackupOptions{
+				Namespace:        b.namespace,
+				Selector:         b.selector,
+				Container:        b.container,
+				Keyspace:         b.keyspace,
+				Dst:              b.dst,
+				Parallel:         b.parallel,
+				BufferSize:       b.bufferSize,
+				CassandraDataDir: b.cassandraDataDir,
+			}
+			if _, err := cain.IncBackup(options); err != nil {
+				log.Fatal(err)
+			}
+		},
+	}
+	f := cmd.Flags()
+
+	f.StringVarP(&b.namespace, "namespace", "n", utils.GetStringEnvVar("CAIN_NAMESPACE", "default"), "namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE")
+	f.StringVarP(&b.selector, "selector", "l", utils.GetStringEnvVar("CAIN_SELECTOR", "app=cassandra"), "selector to filter on. Overrides $CAIN_SELECTOR")
+	f.StringVarP(&b.container, "container", "c", utils.GetStringEnvVar("CAIN_CONTAINER", "cassandra"), "container name to act on. Overrides $CAIN_CONTAINER")
+	f.StringVarP(&b.keyspace, "keyspace", "k", utils.GetStringEnvVar("CAIN_KEYSPACE", ""), "keyspace to act on. Overrides $CAIN_KEYSPACE")
+	f.StringVar(&b.dst, "dst", utils.GetStringEnvVar("CAIN_DST", ""), "destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST")
+	f.IntVarP(&b.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
+	f.Float64VarP(&b.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
+	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+
+	return cmd
+}
+
 type restoreCmd struct {
 	src              string
 	keyspace         string
