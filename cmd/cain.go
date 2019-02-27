@@ -31,6 +31,7 @@ func NewRootCmd(args []string) *cobra.Command {
 	out := cmd.OutOrStdout()
 
 	cmd.AddCommand(NewBackupCmd(out))
+	cmd.AddCommand(NewIncBackupCmd(out))
 	cmd.AddCommand(NewRestoreCmd(out))
 	cmd.AddCommand(NewSchemaCmd(out))
 	cmd.AddCommand(NewVersionCmd(out))
