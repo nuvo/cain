@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/nuvo/skbn/pkg/skbn"
+	"github.com/maorfr/skbn/pkg/skbn"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

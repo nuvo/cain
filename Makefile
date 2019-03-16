@@ -23,7 +23,7 @@ build: fmt vet
 # Build cain docker image
 docker: fmt vet
 	cp bin/cain cain
-	docker build -t nuvo/cain:latest .
+	docker build -t maorfr/cain:latest .
 	rm cain
 
 
@@ -33,7 +33,7 @@ ifdef TRAVIS
 ifdef DOCKER_USER
 ifdef DOCKER_PASSWORD
 	docker login -u $(DOCKER_USER) -p $(DOCKER_PASSWORD)
-	docker push nuvo/cain:latest
+	docker push maorfr/cain:latest
 endif
 endif
 endif

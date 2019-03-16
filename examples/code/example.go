@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nuvo/cain/pkg/cain"
+	"github.com/maorfr/cain/pkg/cain"
 )
 
 func main() {
