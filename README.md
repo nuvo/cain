@@ -13,6 +13,7 @@ Cain supports the following cloud storage services:
 * AWS S3
 * Minio S3
 * Azure Blob Storage
+* Google Cloud Storage
 
 Cain is now an official part of the Helm [incubator/cassandra](https://github.com/helm/charts/tree/master/incubator/cassandra) chart!
 
@@ -87,6 +88,16 @@ cain backup \
     --dst abs://my-account/db-backup-container/cassandra
 ```
 
+Backup to Google Cloud Storage
+
+```
+cain backup \
+    -n default \
+    -l release=cassandra \
+    -k keyspace \
+    --dst gcs://db-backup/cassandra
+```
+
 ### Restore Cassandra backup from cloud storage
 
 Cain performs a restore in the following way:
@@ -136,6 +147,17 @@ Restore from Azure Blob Storage
 ```
 cain restore \
     --src s3://my-account/db-backup-container/cassandra/default/ring01
+    -n default \
+    -k keyspace \
+    -l release=cassandra \
+    -t 20180903091624
+```
+
+Restore from Google Cloud Storage
+
+```
+cain restore \
+    --src gcs://db-backup/cassandra/default/ring01
     -n default \
     -k keyspace \
     -l release=cassandra \
@@ -227,18 +249,23 @@ Since Cain uses [Skbn](https://github.com/maorfr/skbn), adding support for addit
 ### Kubernetes
 
 Cain tries to get credentials in the following order:
-1. if `KUBECONFIG` environment variable is set - skbn will use the current context from that config file
-2. if `~/.kube/config` exists - skbn will use the current context from that config file with an [out-of-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/out-of-cluster-client-configuration)
-3. if `~/.kube/config` does not exist - skbn will assume it is working from inside a pod and will use an [in-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration)
+1. if `KUBECONFIG` environment variable is set - cain will use the current context from that config file
+2. if `~/.kube/config` exists - cain will use the current context from that config file with an [out-of-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/out-of-cluster-client-configuration)
+3. if `~/.kube/config` does not exist - cain will assume it is working from inside a pod and will use an [in-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration)
 
 
 ### AWS
 
-Skbn uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html).
+Cain uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html).
 
 ### Azure Blob Storage
 
-Skbn uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment variables for authentication.
+Cain uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment variables for authentication.
+
+### Google Cloud Storage
+
+Cain uses Google [Application Default Credentials](https://cloud.google.com/docs/authentication/production). 
+Basically, it will first look for the `GOOGLE_APPLICATION_CREDENTIALS` environment variable. If it is not defined, it will look for the default service account, or throw an error if none is configured. 
 
 ## Examples
 
