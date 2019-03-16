@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nuvo/skbn/pkg/skbn"
+	"github.com/maorfr/skbn/pkg/skbn"
 )
 
 // GetFromAndToPathsFromK8s aggregates paths from all pods

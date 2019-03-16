@@ -1,8 +1,8 @@
-[![Release](https://img.shields.io/github/release/nuvo/cain.svg)](https://github.com/nuvo/cain/releases)
-[![Travis branch](https://img.shields.io/travis/nuvo/cain/master.svg)](https://travis-ci.org/nuvo/cain)
-[![Docker Pulls](https://img.shields.io/docker/pulls/nuvo/cain.svg)](https://hub.docker.com/r/nuvo/cain/)
-[![Go Report Card](https://goreportcard.com/badge/github.com/nuvo/cain)](https://goreportcard.com/report/github.com/nuvo/cain)
-[![license](https://img.shields.io/github/license/nuvo/cain.svg)](https://github.com/nuvo/cain/blob/master/LICENSE)
+[![Release](https://img.shields.io/github/release/maorfr/cain.svg)](https://github.com/maorfr/cain/releases)
+[![Travis branch](https://img.shields.io/travis/maorfr/cain/master.svg)](https://travis-ci.org/maorfr/cain)
+[![Docker Pulls](https://img.shields.io/docker/pulls/maorfr/cain.svg)](https://hub.docker.com/r/maorfr/cain/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/maorfr/cain)](https://goreportcard.com/report/github.com/maorfr/cain)
+[![license](https://img.shields.io/github/license/maorfr/cain.svg)](https://github.com/maorfr/cain/blob/master/LICENSE)
 
 # Cain
 
@@ -13,6 +13,7 @@ Cain supports the following cloud storage services:
 * AWS S3
 * Minio S3
 * Azure Blob Storage
+* Google Cloud Storage
 
 Cain is now an official part of the Helm [incubator/cassandra](https://github.com/helm/charts/tree/master/incubator/cassandra) chart!
 
@@ -25,13 +26,13 @@ Cain is now an official part of the Helm [incubator/cassandra](https://github.co
 
 ### From a release
 
-Download the latest release from the [Releases page](https://github.com/nuvo/cain/releases) or use it with a [Docker image](https://hub.docker.com/r/nuvo/cain)
+Download the latest release from the [Releases page](https://github.com/maorfr/cain/releases) or use it with a [Docker image](https://hub.docker.com/r/maorfr/cain)
 
 ### From source
 
 ```
-mkdir -p $GOPATH/src/github.com/nuvo && cd $_
-git clone https://github.com/nuvo/cain.git && cd cain
+mkdir -p $GOPATH/src/github.com/maorfr && cd $_
+git clone https://github.com/maorfr/cain.git && cd cain
 make
 ```
 
@@ -42,7 +43,7 @@ make
 Cain performs a backup in the following way:
 1. Backup the `keyspace` schema (using `cqlsh`).
 1. Get backup data using `nodetool snapshot` - it creates a snapshot of the `keyspace` in all Cassandra pods in the given `namespace` (according to `selector`).
-2. Copy the files in `parallel` to cloud storage using [Skbn](https://github.com/nuvo/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
+2. Copy the files in `parallel` to cloud storage using [Skbn](https://github.com/maorfr/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
 3. Clear all snapshots.
 
 #### Usage
@@ -85,6 +86,16 @@ cain backup \
     -l release=cassandra \
     -k keyspace \
     --dst abs://my-account/db-backup-container/cassandra
+```
+
+Backup to Google Cloud Storage
+
+```
+cain backup \
+    -n default \
+    -l release=cassandra \
+    -k keyspace \
+    --dst gcs://db-backup/cassandra
 ```
 
 ### Restore Cassandra backup from cloud storage
@@ -136,6 +147,17 @@ Restore from Azure Blob Storage
 ```
 cain restore \
     --src s3://my-account/db-backup-container/cassandra/default/ring01
+    -n default \
+    -k keyspace \
+    -l release=cassandra \
+    -t 20180903091624
+```
+
+Restore from Google Cloud Storage
+
+```
+cain restore \
+    --src gcs://db-backup/cassandra/default/ring01
     -n default \
     -k keyspace \
     -l release=cassandra \
@@ -205,12 +227,13 @@ cain backup
 
 ## Support for additional storage services
 
-Since Cain uses [Skbn](https://github.com/nuvo/skbn), adding support for additional storage services is simple. Read [this post](https://medium.com/nuvo-group-tech/copy-files-and-directories-between-kubernetes-and-s3-d290ded9a5e0) for more information.
+Since Cain uses [Skbn](https://github.com/maorfr/skbn), adding support for additional storage services is simple. Read [this post](https://medium.com/maorfr-group-tech/copy-files-and-directories-between-kubernetes-and-s3-d290ded9a5e0) for more information.
 
 ## Skbn compatibility matrix
 
 | Cain version | Skbn version |
 |--------------|--------------|
+| 0.6.0        | 0.5.0        |
 | 0.5.1        | 0.4.2        |
 | 0.5.0        | 0.4.1        |
 | 0.4.2        | 0.4.1        |
@@ -226,18 +249,23 @@ Since Cain uses [Skbn](https://github.com/nuvo/skbn), adding support for additio
 ### Kubernetes
 
 Cain tries to get credentials in the following order:
-1. if `KUBECONFIG` environment variable is set - skbn will use the current context from that config file
-2. if `~/.kube/config` exists - skbn will use the current context from that config file with an [out-of-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/out-of-cluster-client-configuration)
-3. if `~/.kube/config` does not exist - skbn will assume it is working from inside a pod and will use an [in-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration)
+1. if `KUBECONFIG` environment variable is set - cain will use the current context from that config file
+2. if `~/.kube/config` exists - cain will use the current context from that config file with an [out-of-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/out-of-cluster-client-configuration)
+3. if `~/.kube/config` does not exist - cain will assume it is working from inside a pod and will use an [in-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration)
 
 
 ### AWS
 
-Skbn uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html).
+Cain uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html).
 
 ### Azure Blob Storage
 
-Skbn uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment variables for authentication.
+Cain uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment variables for authentication.
+
+### Google Cloud Storage
+
+Cain uses Google [Application Default Credentials](https://cloud.google.com/docs/authentication/production). 
+Basically, it will first look for the `GOOGLE_APPLICATION_CREDENTIALS` environment variable. If it is not defined, it will look for the default service account, or throw an error if none is configured. 
 
 ## Examples
 
