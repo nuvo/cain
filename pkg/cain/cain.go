@@ -19,6 +19,8 @@ type BackupOptions struct {
 	Parallel         int
 	BufferSize       float64
 	CassandraDataDir string
+	CassandraUsername string
+	CassandraPassword string
 }
 
 // Backup performs backup
@@ -48,7 +50,7 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Backing up schema")
-	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath)
+	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath, o.CassandraUsername, o.CassandraPassword)
 	if err != nil {
 		return "", err
 	}
@@ -87,6 +89,8 @@ type RestoreOptions struct {
 	BufferSize       float64
 	UserGroup        string
 	CassandraDataDir string
+	CassandraUsername string
+	CassandraPassword string
 }
 
 // Restore performs restore
@@ -112,13 +116,13 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Getting current schema")
-	_, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, existingPods[0], o.Container, o.Keyspace)
+	_, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, existingPods[0], o.Container, o.Keyspace, o.CassandraUsername, o.CassandraPassword)
 	if err != nil {
 		if o.Schema == "" {
 			return err
 		}
 		log.Println("Schema not found, restoring schema", o.Schema)
-		sum, err = RestoreKeyspaceSchema(srcClient, k8sClient, srcPrefix, srcBasePath, o.Namespace, existingPods[0], o.Container, o.Keyspace, o.Schema, o.Parallel, o.BufferSize)
+		sum, err = RestoreKeyspaceSchema(srcClient, k8sClient, srcPrefix, srcBasePath, o.Namespace, existingPods[0], o.Container, o.Keyspace, o.Schema, o.Parallel, o.BufferSize, o.CassandraUsername, o.CassandraPassword)
 		if err != nil {
 			return err
 		}
@@ -144,13 +148,13 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Getting materialized views to exclude")
-	materializedViews, err := GetMaterializedViews(k8sClient, o.Namespace, o.Container, existingPods[0], o.Keyspace)
+	materializedViews, err := GetMaterializedViews(k8sClient, o.Namespace, o.Container, existingPods[0], o.Keyspace, o.CassandraUsername, o.CassandraPassword)
 	if err != nil {
 		return err
 	}
 
 	log.Println("Truncating tables")
-	TruncateTables(k8sClient, o.Namespace, o.Container, o.Keyspace, existingPods, tablesToRefresh, materializedViews)
+	TruncateTables(k8sClient, o.Namespace, o.Container, o.Keyspace, existingPods, tablesToRefresh, materializedViews, o.CassandraUsername, o.CassandraPassword)
 
 	log.Println("Starting files copy")
 	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, o.Parallel, o.BufferSize); err != nil {
@@ -163,7 +167,7 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Refreshing tables")
-	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh)
+	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh, o.CassandraUsername, o.CassandraPassword)
 
 	log.Println("All done!")
 	return nil
@@ -175,6 +179,8 @@ type SchemaOptions struct {
 	Selector  string
 	Container string
 	Keyspace  string
+	CassandraUsername string
+	CassandraPassword string
 }
 
 // Schema gets the schema of the cassandra cluster
@@ -187,7 +193,7 @@ func Schema(o SchemaOptions) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	schema, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, pods[0], o.Container, o.Keyspace)
+	schema, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, pods[0], o.Container, o.Keyspace, o.CassandraUsername, o.CassandraPassword)
 	if err != nil {
 		return nil, "", err
 	}
