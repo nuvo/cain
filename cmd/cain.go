@@ -39,14 +39,16 @@ func NewRootCmd(args []string) *cobra.Command {
 }
 
 type backupCmd struct {
-	namespace        string
-	selector         string
-	container        string
-	keyspace         string
-	dst              string
-	parallel         int
-	bufferSize       float64
-	cassandraDataDir string
+	namespace         string
+	selector          string
+	container         string
+	keyspace          string
+	dst               string
+	parallel          int
+	bufferSize        float64
+	cassandraDataDir  string
+	cassandraUsername string
+	cassandraPassword string
 
 	out io.Writer
 }
@@ -73,14 +75,16 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options := cain.BackupOptions{
-				Namespace:        b.namespace,
-				Selector:         b.selector,
-				Container:        b.container,
-				Keyspace:         b.keyspace,
-				Dst:              b.dst,
-				Parallel:         b.parallel,
-				BufferSize:       b.bufferSize,
-				CassandraDataDir: b.cassandraDataDir,
+				Namespace:         b.namespace,
+				Selector:          b.selector,
+				Container:         b.container,
+				Keyspace:          b.keyspace,
+				Dst:               b.dst,
+				Parallel:          b.parallel,
+				BufferSize:        b.bufferSize,
+				CassandraDataDir:  b.cassandraDataDir,
+				CassandraUsername: b.cassandraUsername,
+				CassandraPassword: b.cassandraPassword,
 			}
 			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
@@ -97,22 +101,26 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.IntVarP(&b.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
 	f.Float64VarP(&b.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
 	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+	f.StringVar(&b.cassandraUsername, "cassandra-username", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cassandra"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
+	f.StringVar(&b.cassandraPassword, "cassandra-password", utils.GetStringEnvVar("CAIN_CASSANDRA_PASSWORD", ""), "cassandra password. Overrides $CAIN_CASSANDRA_PASSWORD")
 
 	return cmd
 }
 
 type restoreCmd struct {
-	src              string
-	keyspace         string
-	tag              string
-	schema           string
-	namespace        string
-	selector         string
-	container        string
-	parallel         int
-	bufferSize       float64
-	userGroup        string
-	cassandraDataDir string
+	src               string
+	keyspace          string
+	tag               string
+	schema            string
+	namespace         string
+	selector          string
+	container         string
+	parallel          int
+	bufferSize        float64
+	userGroup         string
+	cassandraDataDir  string
+	cassandraUsername string
+	cassandraPassword string
 
 	out io.Writer
 }
@@ -142,17 +150,19 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options := cain.RestoreOptions{
-				Src:              r.src,
-				Keyspace:         r.keyspace,
-				Tag:              r.tag,
-				Schema:           r.schema,
-				Namespace:        r.namespace,
-				Selector:         r.selector,
-				Container:        r.container,
-				Parallel:         r.parallel,
-				BufferSize:       r.bufferSize,
-				UserGroup:        r.userGroup,
-				CassandraDataDir: r.cassandraDataDir,
+				Src:               r.src,
+				Keyspace:          r.keyspace,
+				Tag:               r.tag,
+				Schema:            r.schema,
+				Namespace:         r.namespace,
+				Selector:          r.selector,
+				Container:         r.container,
+				Parallel:          r.parallel,
+				BufferSize:        r.bufferSize,
+				UserGroup:         r.userGroup,
+				CassandraDataDir:  r.cassandraDataDir,
+				CassandraUsername: r.cassandraUsername,
+				CassandraPassword: r.cassandraPassword,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
@@ -172,16 +182,20 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
 	f.StringVar(&r.userGroup, "user-group", utils.GetStringEnvVar("CAIN_USER_GROUP", "cassandra:cassandra"), "user and group who should own restored files. Overrides $CAIN_USER_GROUP")
 	f.StringVar(&r.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+	f.StringVar(&r.cassandraUsername, "cassandra-username", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cassandra"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
+	f.StringVar(&r.cassandraPassword, "cassandra-password", utils.GetStringEnvVar("CAIN_CASSANDRA_PASSWORD", ""), "cassandra password. Overrides $CAIN_CASSANDRA_PASSWORD")
 
 	return cmd
 }
 
 type schemaCmd struct {
-	namespace string
-	selector  string
-	container string
-	keyspace  string
-	sum       bool
+	namespace         string
+	selector          string
+	container         string
+	keyspace          string
+	sum               bool
+	cassandraUsername string
+	cassandraPassword string
 
 	out io.Writer
 }
@@ -202,10 +216,12 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options := cain.SchemaOptions{
-				Namespace: s.namespace,
-				Selector:  s.selector,
-				Container: s.container,
-				Keyspace:  s.keyspace,
+				Namespace:         s.namespace,
+				Selector:          s.selector,
+				Container:         s.container,
+				Keyspace:          s.keyspace,
+				CassandraUsername: s.cassandraUsername,
+				CassandraPassword: s.cassandraPassword,
 			}
 			schema, sum, err := cain.Schema(options)
 			if err != nil {
@@ -226,6 +242,8 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&s.container, "container", "c", utils.GetStringEnvVar("CAIN_CONTAINER", "cassandra"), "container name to act on. Overrides $CAIN_CONTAINER")
 	f.StringVarP(&s.keyspace, "keyspace", "k", utils.GetStringEnvVar("CAIN_KEYSPACE", ""), "keyspace to act on. Overrides $CAIN_KEYSPACE")
 	f.BoolVar(&s.sum, "sum", utils.GetBoolEnvVar("CAIN_SUM", false), "print only checksum. Overrides $CAIN_SUM")
+	f.StringVar(&s.cassandraUsername, "cassandra-username", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cassandra"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
+	f.StringVar(&s.cassandraPassword, "cassandra-password", utils.GetStringEnvVar("CAIN_CASSANDRA_PASSWORD", ""), "cassandra password. Overrides $CAIN_CASSANDRA_PASSWORD")
 
 	return cmd
 }

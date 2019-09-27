@@ -11,14 +11,14 @@ import (
 
 // BackupOptions are the options to pass to Backup
 type BackupOptions struct {
-	Namespace        string
-	Selector         string
-	Container        string
-	Keyspace         string
-	Dst              string
-	Parallel         int
-	BufferSize       float64
-	CassandraDataDir string
+	Namespace         string
+	Selector          string
+	Container         string
+	Keyspace          string
+	Dst               string
+	Parallel          int
+	BufferSize        float64
+	CassandraDataDir  string
 	CassandraUsername string
 	CassandraPassword string
 }
@@ -78,17 +78,17 @@ func Backup(o BackupOptions) (string, error) {
 
 // RestoreOptions are the options to pass to Restore
 type RestoreOptions struct {
-	Src              string
-	Keyspace         string
-	Tag              string
-	Schema           string
-	Namespace        string
-	Selector         string
-	Container        string
-	Parallel         int
-	BufferSize       float64
-	UserGroup        string
-	CassandraDataDir string
+	Src               string
+	Keyspace          string
+	Tag               string
+	Schema            string
+	Namespace         string
+	Selector          string
+	Container         string
+	Parallel          int
+	BufferSize        float64
+	UserGroup         string
+	CassandraDataDir  string
 	CassandraUsername string
 	CassandraPassword string
 }
@@ -175,10 +175,10 @@ func Restore(o RestoreOptions) error {
 
 // SchemaOptions are the options to pass to Schema
 type SchemaOptions struct {
-	Namespace string
-	Selector  string
-	Container string
-	Keyspace  string
+	Namespace         string
+	Selector          string
+	Container         string
+	Keyspace          string
 	CassandraUsername string
 	CassandraPassword string
 }

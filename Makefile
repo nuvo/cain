@@ -43,7 +43,7 @@ ifndef HAS_DEP
 	wget -q -O $(GOPATH)/bin/dep https://github.com/golang/dep/releases/download/$(DEP_VERSION)/dep-linux-amd64
 	chmod +x $(GOPATH)/bin/dep
 endif
-	dep ensure
+	dep ensure -v
 
 dist:
 	mkdir -p $(DIST)
