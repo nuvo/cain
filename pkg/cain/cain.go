@@ -167,7 +167,7 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Refreshing tables")
-	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh, o.CassandraUsername, o.CassandraPassword)
+	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh)
 
 	log.Println("All done!")
 	return nil

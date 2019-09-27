@@ -8,9 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nuvo/cain/pkg/cain"
 	"github.com/nuvo/cain/pkg/utils"
 	"github.com/spf13/cobra"
+	"github.com/spyoff/cain/pkg/cain"
 )
 
 func main() {
