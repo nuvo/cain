@@ -543,7 +543,6 @@
   analyzer-version = 1
   input-imports = [
     "github.com/nuvo/cain/pkg/cain",
-    "github.com/nuvo/cain/pkg/utils",
     "github.com/nuvo/skbn/pkg/skbn",
     "github.com/spf13/cobra",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

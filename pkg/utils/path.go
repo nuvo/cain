@@ -13,7 +13,6 @@ func GetFromAndToPathsFromK8s(iClient interface{}, pods []string, namespace, con
 	k8sClient := iClient.(*skbn.K8sClient)
 	var fromToPathsAllPods []skbn.FromToPair
 	for _, pod := range pods {
-
 		fromToPaths, err := GetFromAndToPathsK8sToDst(k8sClient, namespace, pod, container, keyspace, tag, dstBasePath, cassandraDataDir)
 		if err != nil {
 			return nil, err
@@ -49,7 +48,6 @@ func GetFromAndToPathsSrcToK8s(srcClient, k8sClient interface{}, srcPrefix, srcP
 
 		fromToPaths = append(fromToPaths, skbn.FromToPair{FromPath: fromPath, ToPath: toPath})
 	}
-
 	return fromToPaths, MapKeysToSlice(pods), MapKeysToSlice(tables), nil
 }
 
@@ -77,7 +75,6 @@ func GetFromAndToPathsK8sToDst(k8sClient interface{}, namespace, pod, container,
 
 			fromPath := filepath.Join(tablePath, fileToCopyRelativePath)
 			toPath := PathFromK8sToDst(fromPath, cassandraDataDir, dstBasePath)
-
 			fromToPaths = append(fromToPaths, skbn.FromToPair{FromPath: fromPath, ToPath: toPath})
 		}
 	}

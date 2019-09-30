@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nuvo/cain/pkg/utils"
 	"github.com/nuvo/skbn/pkg/skbn"
+	"github.com/spyoff/cain/pkg/utils"
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
@@ -29,7 +29,7 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 
 	reader := bytes.NewReader(schema)
 	if err := skbn.Upload(iDstClient, dstPrefix, schemaToPath, "", reader); err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return dstBasePath, nil

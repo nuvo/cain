@@ -18,12 +18,13 @@ vet:
 
 # Build cain binary
 build: fmt vet
+	# CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags $(LDFLAGS) -o bin/cain cmd/cain.go
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -o bin/cain cmd/cain.go
 
 # Build cain docker image
 docker: fmt vet
 	cp bin/cain cain
-	docker build -t nuvo/cain:latest .
+	docker build -t spyoff/cain:latest .
 	rm cain
 
 
@@ -33,7 +34,7 @@ ifdef TRAVIS
 ifdef DOCKER_USER
 ifdef DOCKER_PASSWORD
 	docker login -u $(DOCKER_USER) -p $(DOCKER_PASSWORD)
-	docker push nuvo/cain:latest
+	docker push spyoff/cain:latest
 endif
 endif
 endif
