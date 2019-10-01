@@ -6,6 +6,8 @@
 
 # Cain
 
+Added capabilities for cassandra that use password.
+
 Cain is a backup and restore tool for Cassandra on Kubernetes. It is named after the DC Comics superhero [Cassandra Cain](https://en.wikipedia.org/wiki/Cassandra_Cain).
 
 Cain supports the following cloud storage services:
@@ -57,6 +59,8 @@ Usage:
 Flags:
   -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
       --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
+      --cassandra-username          cassandra username (optional). Overrides $CAIN_CASSANDRA_USERNAME (default "cassandra")
+      --cassandra-password          cassandra password (optional). Overrides $CAIN_CASSANDRA_PASSWORD (default "")
   -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
       --dst string                  destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST
   -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
@@ -107,6 +111,8 @@ Usage:
 Flags:
   -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
       --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
+      --cassandra-username          cassandra username (optional). Overrides $CAIN_CASSANDRA_USERNAME (default "cassandra")
+      --cassandra-password          cassandra password (optional). Overrides $CAIN_CASSANDRA_PASSWORD (default "")
   -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
   -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
   -n, --namespace string            namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
@@ -157,6 +163,8 @@ Usage:
 
 Flags:
   -c, --container string   container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
+      --cassandra-username cassandra username (optional). Overrides $CAIN_CASSANDRA_USERNAME (default "cassandra")
+      --cassandra-password cassandra password (optional). Overrides $CAIN_CASSANDRA_PASSWORD (default "")
   -k, --keyspace string    keyspace to act on. Overrides $CAIN_KEYSPACE
   -n, --namespace string   namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
   -l, --selector string    selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
