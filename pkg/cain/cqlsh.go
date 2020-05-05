@@ -29,7 +29,7 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 
 	reader := bytes.NewReader(schema)
 	if err := skbn.Upload(iDstClient, dstPrefix, schemaToPath, "", reader); err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return dstBasePath, nil
