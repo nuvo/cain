@@ -11,7 +11,7 @@ import (
 )
 
 // TakeSnapshots takes a snapshot using nodetool in all pods in parallel
-func TakeSnapshots(iClient interface{}, pods []string, namespace, container, keyspace string) string {
+func TakeSnapshots(iClient interface{}, pods []string, namespace, container, keyspace string, username string, password string) string {
 	k8sClient := iClient.(*skbn.K8sClient)
 	tag := utils.GetTimeStamp()
 	bwgSize := len(pods)
@@ -19,12 +19,12 @@ func TakeSnapshots(iClient interface{}, pods []string, namespace, container, key
 	for _, pod := range pods {
 		bwg.Add(1)
 
-		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
-			if err := takeSnapshot(k8sClient, namespace, pod, container, keyspace, tag); err != nil {
+		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, username, password, tag string) {
+			if err := takeSnapshot(k8sClient, namespace, pod, container, keyspace, username, password, tag); err != nil {
 				log.Fatal(err)
 			}
 			bwg.Done()
-		}(k8sClient, namespace, pod, container, keyspace, tag)
+		}(k8sClient, namespace, pod, container, keyspace, username, password, tag)
 	}
 	bwg.Wait()
 
@@ -89,7 +89,7 @@ func GetClusterName(iClient interface{}, namespace, pod, container string) (stri
 	return output, nil
 }
 
-func takeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) error {
+func takeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, username, password, tag string) error {
 	log.Println(pod, "Taking snapshot of keyspace", keyspace)
 	command := []string{"snapshot", "-t", tag, keyspace}
 	output, err := nodetool(k8sClient, namespace, pod, container, command)

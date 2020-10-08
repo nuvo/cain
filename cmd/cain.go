@@ -47,6 +47,8 @@ type backupCmd struct {
 	parallel         int
 	bufferSize       float64
 	cassandraDataDir string
+	username         string
+	password         string
 
 	out io.Writer
 }
@@ -81,6 +83,8 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 				Parallel:         b.parallel,
 				BufferSize:       b.bufferSize,
 				CassandraDataDir: b.cassandraDataDir,
+				Username:         b.username,
+				Password:         b.password,
 			}
 			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
@@ -97,6 +101,8 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.IntVarP(&b.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
 	f.Float64VarP(&b.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
 	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+	f.StringVarP(&b.username, "username", "u", utils.GetStringEnvVar("CAIN_USERNAME", "cassandra"), "username for the cassandra connection. Overrides $CAIN_USERNAME")
+	f.StringVarP(&b.password, "password", "w", utils.GetStringEnvVar("CAIN_PASSWORD", "cassandra"), "password for the cassandra connection. Overrides $CAIN_PASSWORD")
 
 	return cmd
 }
@@ -113,6 +119,8 @@ type restoreCmd struct {
 	bufferSize       float64
 	userGroup        string
 	cassandraDataDir string
+	username         string
+	password         string
 
 	out io.Writer
 }
@@ -153,6 +161,8 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 				BufferSize:       r.bufferSize,
 				UserGroup:        r.userGroup,
 				CassandraDataDir: r.cassandraDataDir,
+				Username:         r.username,
+				Password:         r.password,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
@@ -172,6 +182,8 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
 	f.StringVar(&r.userGroup, "user-group", utils.GetStringEnvVar("CAIN_USER_GROUP", "cassandra:cassandra"), "user and group who should own restored files. Overrides $CAIN_USER_GROUP")
 	f.StringVar(&r.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
+	f.StringVarP(&r.username, "username", "u", utils.GetStringEnvVar("CAIN_USERNAME", "cassandra"), "username for the cassandra connection. Overrides $CAIN_USERNAME")
+	f.StringVarP(&r.password, "password", "w", utils.GetStringEnvVar("CAIN_PASSWORD", "cassandra"), "password for the cassandra connection. Overrides $CAIN_PASSWORD")
 
 	return cmd
 }
@@ -182,6 +194,8 @@ type schemaCmd struct {
 	container string
 	keyspace  string
 	sum       bool
+	username  string
+	password  string
 
 	out io.Writer
 }
@@ -226,6 +240,8 @@ func NewSchemaCmd(out io.Writer) *cobra.Command {
 	f.StringVarP(&s.container, "container", "c", utils.GetStringEnvVar("CAIN_CONTAINER", "cassandra"), "container name to act on. Overrides $CAIN_CONTAINER")
 	f.StringVarP(&s.keyspace, "keyspace", "k", utils.GetStringEnvVar("CAIN_KEYSPACE", ""), "keyspace to act on. Overrides $CAIN_KEYSPACE")
 	f.BoolVar(&s.sum, "sum", utils.GetBoolEnvVar("CAIN_SUM", false), "print only checksum. Overrides $CAIN_SUM")
+	f.StringVarP(&s.username, "username", "u", utils.GetStringEnvVar("CAIN_USERNAME", "cassandra"), "username for the cassandra connection. Overrides $CAIN_USERNAME")
+	f.StringVarP(&s.password, "password", "w", utils.GetStringEnvVar("CAIN_PASSWORD", "cassandra"), "password for the cassandra connection. Overrides $CAIN_PASSWORD")
 
 	return cmd
 }
