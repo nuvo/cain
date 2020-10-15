@@ -13,13 +13,13 @@ import (
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
-func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string) (string, error) {
+func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, username, password, dstPrefix, dstPath string) (string, error) {
 	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container)
 	if err != nil {
 		return "", err
 	}
 
-	schema, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace)
+	schema, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace, username, password)
 	if err != nil {
 		return "", err
 	}
@@ -36,9 +36,9 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 }
 
 // DescribeKeyspaceSchema describes the schema of the keyspace
-func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, keyspace string) ([]byte, string, error) {
+func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, keyspace string, username string, password string) ([]byte, string, error) {
 	command := []string{fmt.Sprintf("DESC %s;", keyspace)}
-	schema, err := Cqlsh(iK8sClient, namespace, pod, container, command)
+	schema, err := Cqlsh(iK8sClient, namespace, pod, container, command, username, password)
 	if err != nil {
 		return nil, "", fmt.Errorf("Could not describe schema. make sure a schema exists for keyspace \"%s\" or restore it using \"--schema\". %s", keyspace, err)
 	}
@@ -50,7 +50,7 @@ func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, k
 }
 
 // RestoreKeyspaceSchema restores a keyspace schema
-func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath, namespace, pod, container, keyspace, schema string, parallel int, bufferSize float64) (string, error) {
+func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath, namespace, pod, container, keyspace, username, password, schema string, parallel int, bufferSize float64) (string, error) {
 	schemaTmpFile := fmt.Sprintf("/tmp/%s/schema.cql", keyspace)
 	fromTo := skbn.FromToPair{
 		FromPath: filepath.Join(srcPath, keyspace, schema, "schema.cql"),
@@ -62,19 +62,19 @@ func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath
 	if _, err := CqlshF(iK8sClient, namespace, pod, container, schemaTmpFile); err != nil {
 		return "", err
 	}
-	_, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace)
+	_, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace, username, password)
 
 	return sum, err
 }
 
 // TruncateTables truncates the provided tables in all pods
-func TruncateTables(iK8sClient interface{}, namespace, container, keyspace string, pods, tables, materializedViews []string) {
+func TruncateTables(iK8sClient interface{}, namespace, container, keyspace string, username string, password string, pods, tables, materializedViews []string) {
 	bwgSize := len(pods)
 	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 
-		go func(iK8sClient interface{}, namespace, container, keyspace, pod string) {
+		go func(iK8sClient interface{}, namespace, container, keyspace, username string, password string, pod string) {
 			for _, table := range tables {
 				if utils.Contains(materializedViews, table) {
 					log.Println(pod, "Skipping materialized view", table, "in keyspace", keyspace)
@@ -82,23 +82,23 @@ func TruncateTables(iK8sClient interface{}, namespace, container, keyspace strin
 				}
 				log.Println(pod, "Truncating table", table, "in keyspace", keyspace)
 				command := []string{fmt.Sprintf("TRUNCATE %s.%s;", keyspace, table)}
-				_, err := Cqlsh(iK8sClient, namespace, pod, container, command)
+				_, err := Cqlsh(iK8sClient, namespace, pod, container, command, username, password)
 				if err != nil {
 					log.Fatal(err)
 				}
 			}
 			bwg.Done()
-		}(iK8sClient, namespace, container, keyspace, pod)
+		}(iK8sClient, namespace, container, keyspace, username, password, pod)
 
 	}
 	bwg.Wait()
 }
 
 // GetMaterializedViews gets all materialized views to avoid truncate and refresh
-func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, keyspace string) ([]string, error) {
+func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, keyspace string, username string, password string) ([]string, error) {
 
 	command := []string{fmt.Sprintf("SELECT view_name FROM system_schema.views WHERE keyspace_name='%s';", keyspace)}
-	output, err := Cqlsh(iK8sClient, namespace, pod, container, command)
+	output, err := Cqlsh(iK8sClient, namespace, pod, container, command, username, password)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,10 +124,16 @@ func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, key
 }
 
 // Cqlsh executes cqlsh -e 'command' in a given pod
-func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []string) ([]byte, error) {
+func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []string, username string, password string) ([]byte, error) {
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
-	command = append([]string{"cqlsh", "-e"}, command...)
+	baseCommand := []string{"cqlsh"}
+	if len(username) > 0 && len(password) > 0 {
+		baseCommand = append(baseCommand, []string{"-u", username, "-p", password}...)
+	}
+	baseCommand = append(baseCommand, "-e")
+
+	command = append(baseCommand, command...)
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 
