@@ -59,7 +59,7 @@ func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath
 	if err := skbn.PerformCopy(srcClient, iK8sClient, srcPrefix, "k8s", []skbn.FromToPair{fromTo}, parallel, bufferSize); err != nil {
 		return "", err
 	}
-	if _, err := CqlshF(iK8sClient, namespace, pod, container, schemaTmpFile); err != nil {
+	if _, err := CqlshF(iK8sClient, namespace, pod, container, schemaTmpFile, username, password); err != nil {
 		return "", err
 	}
 	_, sum, err := DescribeKeyspaceSchema(iK8sClient, namespace, pod, container, keyspace, username, password)
@@ -148,10 +148,15 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 }
 
 // CqlshF executes cqlsh -f file in a given pod
-func CqlshF(iK8sClient interface{}, namespace, pod, container string, file string) ([]byte, error) {
+func CqlshF(iK8sClient interface{}, namespace, pod, container string, file string, username string, password string) ([]byte, error) {
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
 	command := []string{"cqlsh", "-f", file}
+
+	if len(username) > 0 && len(password) > 0 {
+		command = append(command, []string{"-u", username, "-p", password}...)
+	}
+
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 
