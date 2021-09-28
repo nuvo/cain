@@ -11,24 +11,27 @@ import (
 )
 
 // TakeSnapshots takes a snapshot using nodetool in all pods in parallel
-func TakeSnapshots(iClient interface{}, pods []string, namespace, container, keyspace string, username string, password string) string {
+func TakeSnapshots(iClient interface{}, pods []string, namespace, container, keyspace string, username string, password string, tag string) string {
 	k8sClient := iClient.(*skbn.K8sClient)
-	tag := utils.GetTimeStamp()
+	realtag := utils.GetTimeStamp()
+	if len(tag) == 0 {
+		realtag = tag
+	}
 	bwgSize := len(pods)
 	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 
 		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, username, password, tag string) {
-			if err := takeSnapshot(k8sClient, namespace, pod, container, keyspace, username, password, tag); err != nil {
+			if err := takeSnapshot(k8sClient, namespace, pod, container, keyspace, username, password, realtag); err != nil {
 				log.Fatal(err)
 			}
 			bwg.Done()
-		}(k8sClient, namespace, pod, container, keyspace, username, password, tag)
+		}(k8sClient, namespace, pod, container, keyspace, username, password, realtag)
 	}
 	bwg.Wait()
 
-	return tag
+	return realtag
 }
 
 // ClearSnapshots clears a snapshot using nodetool in all pods in parallel

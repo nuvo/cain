@@ -49,6 +49,7 @@ type backupCmd struct {
 	cassandraDataDir string
 	username         string
 	password         string
+	tag              string
 
 	out io.Writer
 }
@@ -85,6 +86,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 				CassandraDataDir: b.cassandraDataDir,
 				Username:         b.username,
 				Password:         b.password,
+				Tag:              b.tag,
 			}
 			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
@@ -103,6 +105,7 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 	f.StringVarP(&b.username, "username", "u", utils.GetStringEnvVar("CAIN_USERNAME", "cassandra"), "username for the cassandra connection. Overrides $CAIN_USERNAME")
 	f.StringVarP(&b.password, "password", "w", utils.GetStringEnvVar("CAIN_PASSWORD", "cassandra"), "password for the cassandra connection. Overrides $CAIN_PASSWORD")
+	f.StringVarP(&b.tag, "tag", "t", utils.GetStringEnvVar("CAIN_TAG", ""), "tag to backup, if empty then will use current timestamp. Overrides $CAIN_TAG")
 
 	return cmd
 }

@@ -21,6 +21,7 @@ type BackupOptions struct {
 	CassandraDataDir string
 	Username         string
 	Password         string
+	Tag              string
 }
 
 // Backup performs backup
@@ -56,7 +57,7 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Taking snapshots")
-	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, o.Username, o.Password)
+	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, o.Username, o.Password, o.Tag)
 
 	log.Println("Calculating paths. This may take a while...")
 	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, dstBasePath, o.CassandraDataDir)
