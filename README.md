@@ -30,7 +30,7 @@ Download the latest release from the [Releases page](https://github.com/maorfr/c
 
 ### From source
 
-```
+```shell
 mkdir -p $GOPATH/src/github.com/maorfr && cd $_
 git clone https://github.com/maorfr/cain.git && cd cain
 make
@@ -41,14 +41,15 @@ make
 ### Backup Cassandra cluster to cloud storage
 
 Cain performs a backup in the following way:
+
 1. Backup the `keyspace` schema (using `cqlsh`).
-1. Get backup data using `nodetool snapshot` - it creates a snapshot of the `keyspace` in all Cassandra pods in the given `namespace` (according to `selector`).
-2. Copy the files in `parallel` to cloud storage using [Skbn](https://github.com/maorfr/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
-3. Clear all snapshots.
+2. Get backup data using `nodetool snapshot` - it creates a snapshot of the `keyspace` in all Cassandra pods in the given `namespace` (according to `selector`).
+3. Copy the files in `parallel` to cloud storage using [Skbn](https://github.com/maorfr/skbn) - it copies the files to the specified `dst`, under `namespace/<cassandrClusterName>/keyspace/<keyspaceSchemaHash>/tag/`.
+4. Clear all snapshots.
 
 #### Usage
 
-```
+```shell
 $ cain backup --help
 backup cassandra cluster to cloud storage
 
@@ -60,17 +61,22 @@ Flags:
       --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
   -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
       --dst string                  destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST
+  -h, --help                        help for backup
   -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
   -n, --namespace string            namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
   -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
+  -w, --password string             password for the cassandra connection. Overrides $CAIN_PASSWORD (default "cassandra")
   -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
+  -t, --tag string                  tag to backup, if empty then will use current timestamp. Use with cauthon - if tag exists then its contents will be overwritten. Overrides $CAIN_TAG
+  -u, --username string             username for the cassandra connection. Overrides $CAIN_USERNAME (default "cassandra")
+
 ```
 
 #### Examples
 
 Backup to AWS S3
 
-```
+```shell
 cain backup \
     -n default \
     -l release=cassandra \
@@ -78,9 +84,20 @@ cain backup \
     --dst s3://db-backup/cassandra
 ```
 
+Backup to AWS S3 using specific tag named `before-upgrade`
+
+```shell
+cain backup \
+    -n default \
+    -l release=cassandra \
+    -k keyspace \
+    --dst s3://db-backup/cassandra \
+    -t before-upgrade
+```
+
 Backup to Azure Blob Storage
 
-```
+```shell
 cain backup \
     -n default \
     -l release=cassandra \
@@ -90,7 +107,7 @@ cain backup \
 
 Backup to Google Cloud Storage
 
-```
+```shell
 cain backup \
     -n default \
     -l release=cassandra \
@@ -101,6 +118,7 @@ cain backup \
 ### Restore Cassandra backup from cloud storage
 
 Cain performs a restore in the following way:
+
 1. Restore schema if `schema` is specified.
 2. Truncate all tables in `keyspace`.
 3. Copy files from the specified `src` (under `keyspace/<keyspaceSchemaHash>/tag/`) - restore is only possible for the same keyspace schema.
@@ -108,7 +126,7 @@ Cain performs a restore in the following way:
 
 #### Usage
 
-```
+```shell
 $ cain restore --help
 restore cassandra cluster from cloud storage
 
@@ -133,7 +151,7 @@ Flags:
 
 Restore from S3
 
-```
+```shell
 cain restore \
     --src s3://db-backup/cassandra/default/ring01
     -n default \
@@ -142,9 +160,20 @@ cain restore \
     -t 20180903091624
 ```
 
+Restore from S3 from specific tag used before
+
+```shell
+cain restore \
+    --src s3://db-backup/cassandra/default/ring01
+    -n default \
+    -k keyspace \
+    -l release=cassandra \
+    -t before-upgrade
+```
+
 Restore from Azure Blob Storage
 
-```
+```shell
 cain restore \
     --src s3://my-account/db-backup-container/cassandra/default/ring01
     -n default \
@@ -155,7 +184,7 @@ cain restore \
 
 Restore from Google Cloud Storage
 
-```
+```shell
 cain restore \
     --src gcs://db-backup/cassandra/default/ring01
     -n default \
@@ -170,7 +199,7 @@ Cain describes the `keyspace` schema using `cqlsh`. It can return the schema its
 
 #### Usage
 
-```
+```shell
 $ cain schema --help
 get schema of cassandra cluster
 
@@ -187,13 +216,14 @@ Flags:
 
 #### Examples
 
-```
+```shell
 cain schema \
     -n default \
     -l release=cassandra \
     -k keyspace
 ```
-```
+
+```shell
 cain schema \
     -n default \
     -l release=cassandra \
@@ -206,7 +236,7 @@ cain schema \
 Cain commands support the usage of environment variables instead of flags. For example:
 The `backup` command can be executed as mentioned in the example:
 
-```
+```shell
 cain backup \
     -n default \
     -l release=cassandra \
@@ -214,9 +244,9 @@ cain backup \
     --dst s3://db-backup/cassandra
 ```
 
-You can also set the appropriate envrionment variables (CAIN_FLAG, _ instead of -):
+You can also set the appropriate envrionment variables (`CAIN_FLAG`, `_` instead of `-`):
 
-```
+```shell
 export CAIN_NAMESPACE=default
 export CAIN_SELECTOR=release=cassandra
 export CAIN_KEYSPACE=keyspace
@@ -245,14 +275,13 @@ Since Cain uses [Skbn](https://github.com/maorfr/skbn), adding support for addit
 
 ## Credentials
 
-
 ### Kubernetes
 
 Cain tries to get credentials in the following order:
+
 1. if `KUBECONFIG` environment variable is set - cain will use the current context from that config file
 2. if `~/.kube/config` exists - cain will use the current context from that config file with an [out-of-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/out-of-cluster-client-configuration)
 3. if `~/.kube/config` does not exist - cain will assume it is working from inside a pod and will use an [in-cluster client configuration](https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration)
-
 
 ### AWS
 
