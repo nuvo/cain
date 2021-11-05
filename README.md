@@ -67,7 +67,7 @@ Flags:
   -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
   -w, --password string             password for the cassandra connection. Overrides $CAIN_PASSWORD (default "cassandra")
   -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
-  -t, --tag string                  tag to backup, if empty then will use current timestamp. Use with cauthon - if tag exists then its contents will be overwritten. Overrides $CAIN_TAG
+  -t, --tag string                  tag to backup, if empty then will use current timestamp. Use with caution - if tag exists then its contents will be overwritten. Overrides $CAIN_TAG
   -u, --username string             username for the cassandra connection. Overrides $CAIN_USERNAME (default "cassandra")
 
 ```
@@ -142,9 +142,10 @@ Flags:
   -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
   -s, --schema string               schema version to restore (optional). Overrides $CAIN_SCHEMA
   -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
-      --src string                  source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name. Overrides $CAIN_SRC
+      --src string                  source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name. Notice that the src should not end with the forward slash. Overrides $CAIN_SRC
   -t, --tag string                  tag to restore. Overrides $CAIN_TAG
-      --user-group string           user and group who should own restored files. Overrides $CAIN_USER_GROUP (default "cassandra:cassandra")
+      --user-group string           user and group who should own restored files. Overrides $CAIN_USER_GROUP (default "cassandra:cassandra").
+        If you use rootless containers then ensure to set exactly the same user and group (by name or number) as in target container.
 ```
 
 #### Examples
@@ -244,7 +245,7 @@ cain backup \
     --dst s3://db-backup/cassandra
 ```
 
-You can also set the appropriate envrionment variables (`CAIN_FLAG`, `_` instead of `-`):
+You can also set the appropriate environment variables (`CAIN_FLAG`, `_` instead of `-`):
 
 ```shell
 export CAIN_NAMESPACE=default
@@ -293,8 +294,8 @@ Cain uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment var
 
 ### Google Cloud Storage
 
-Cain uses Google [Application Default Credentials](https://cloud.google.com/docs/authentication/production). 
-Basically, it will first look for the `GOOGLE_APPLICATION_CREDENTIALS` environment variable. If it is not defined, it will look for the default service account, or throw an error if none is configured. 
+Cain uses Google [Application Default Credentials](https://cloud.google.com/docs/authentication/production).
+Basically, it will first look for the `GOOGLE_APPLICATION_CREDENTIALS` environment variable. If it is not defined, it will look for the default service account, or throw an error if none is configured.
 
 ## Examples
 
