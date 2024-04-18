@@ -11,14 +11,14 @@ TRAVIS := $(shell printenv TRAVIS)
 all: bootstrap build docker push
 
 fmt:
-	go fmt ./pkg/... ./cmd/...
+	go fmt -mod=mod ./pkg/... ./cmd/...
 
 vet:
-	go vet ./pkg/... ./cmd/...
+	go vet -mod=mod  ./pkg/... ./cmd/...
 
 # Build cain binary
 build: fmt vet
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -o bin/cain cmd/cain.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=mod -ldflags $(LDFLAGS) -o bin/cain cmd/cain.go
 
 # Build cain docker image
 docker: fmt vet
