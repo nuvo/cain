@@ -14,3 +14,6 @@
 # dep/glide
 vendor/
 bin/
+rebuild.sh
+go.mod
+go.sum

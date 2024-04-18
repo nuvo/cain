@@ -122,8 +122,10 @@ func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 	return nil
 }
 
-func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, command []string) (string, error) {
-	command = append([]string{"nodetool"}, command...)
+func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, args []string) (string, error) {
+	var command []string
+
+	command = append([]string{"nodetool"}, args...)
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 	if len(stderr) != 0 {
