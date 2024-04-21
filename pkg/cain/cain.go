@@ -9,6 +9,14 @@ import (
 	"github.com/nuvo/skbn/pkg/skbn"
 )
 
+// Authentication options if cassandra cluster uses authentication
+type Authentication struct {
+	enabled              bool
+	username             string
+	nodetoolPasswordFile string
+	cqlshrcFile          string
+}
+
 // BackupOptions are the options to pass to Backup
 type BackupOptions struct {
 	Namespace            string
@@ -21,7 +29,8 @@ type BackupOptions struct {
 	CassandraDataDir     string
 	Authentication       bool
 	CassandraUsername    string
-	NodetoolPasswordPath string
+	NodetoolPasswordFile string
+	CqlshrcFile          string
 }
 
 // Backup performs backup
@@ -49,15 +58,34 @@ func Backup(o BackupOptions) (string, error) {
 	if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.CassandraDataDir); err != nil {
 		return "", err
 	}
+	auth := Authentication{
+		enabled:              o.Authentication,
+		username:             o.CassandraUsername,
+		nodetoolPasswordFile: o.NodetoolPasswordFile,
+		cqlshrcFile:          o.CqlshrcFile,
+	}
+	if o.Authentication {
+
+		log.Println("Testing existence of cqlshrc file")
+		if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.CqlshrcFile); err != nil {
+			return "", err
+		}
+
+		log.Println("Testing existence of nodetool password file")
+		if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.NodetoolPasswordFile); err != nil {
+			return "", err
+		}
+
+	}
 
 	log.Println("Backing up schema")
-	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath)
+	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath, auth)
 	if err != nil {
 		return "", err
 	}
 
 	log.Println("Taking snapshots")
-	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace)
+	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, auth)
 
 	log.Println("Calculating paths. This may take a while...")
 	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, dstBasePath, o.CassandraDataDir)
@@ -71,7 +99,7 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Clearing snapshots")
-	ClearSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag)
+	ClearSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, auth)
 
 	log.Println("All done!")
 	return tag, nil
@@ -92,7 +120,8 @@ type RestoreOptions struct {
 	CassandraDataDir     string
 	Authentication       bool
 	CassandraUsername    string
-	NodetoolPasswordPath string
+	NodetoolPasswordFile string
+	CqlshrcFile          string
 }
 
 // Restore performs restore
@@ -116,7 +145,23 @@ func Restore(o RestoreOptions) error {
 	if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.CassandraDataDir); err != nil {
 		return err
 	}
+	auth := Authentication{
+		enabled:              o.Authentication,
+		username:             o.CassandraUsername,
+		nodetoolPasswordFile: o.NodetoolPasswordFile,
+		cqlshrcFile:          o.CqlshrcFile,
+	}
+	if o.Authentication {
 
+		log.Println("Testing existence of cqlshrc file")
+		if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.CqlshrcFile); err != nil {
+			return err
+		}
+		log.Println("Testing existence of nodetool password file")
+		if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.NodetoolPasswordFile); err != nil {
+			return err
+		}
+	}
 	log.Println("Getting current schema")
 	_, sum, err := DescribeKeyspaceSchema(k8sClient, o.Namespace, existingPods[0], o.Container, o.Keyspace)
 	if err != nil {
@@ -169,7 +214,7 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Refreshing tables")
-	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh)
+	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh, auth)
 
 	log.Println("All done!")
 	return nil

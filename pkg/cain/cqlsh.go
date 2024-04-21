@@ -13,8 +13,8 @@ import (
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
-func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string) (string, error) {
-	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container)
+func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string, auth Authentication) (string, error) {
+	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container, auth)
 	if err != nil {
 		return "", err
 	}
@@ -131,6 +131,7 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 
+	stderr = removeKnownWarnings(stderr)
 	if len(stderr) != 0 {
 		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
 	}
@@ -148,7 +149,7 @@ func CqlshF(iK8sClient interface{}, namespace, pod, container string, file strin
 	command := []string{"cqlsh", "-f", file}
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
-
+	stderr = removeKnownWarnings(stderr)
 	if len(stderr) != 0 {
 		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
 	}
@@ -162,4 +163,18 @@ func CqlshF(iK8sClient interface{}, namespace, pod, container string, file strin
 func removeWarning(b []byte) []byte {
 	const warning = "Warning: Cannot create directory at `/home/cassandra/.cassandra`. Command history will not be saved."
 	return []byte(strings.Replace((string)(b), warning, "", 1))
+}
+
+func removeKnownWarnings(b []byte) []byte {
+	warnings := []string{
+		"Warning: Password is found in an insecure cqlshrc file. The file is owned or readable by other users on the system.",
+		"Notice: Credentials in the cqlshrc file is deprecated and will be ignored in the future.",
+		"Please use a credentials file to specify the username and password.",
+	}
+	cleaned := (string)(b)
+	for _, warning := range warnings {
+		cleaned = strings.Replace(cleaned, warning, "", 1)
+	}
+	cleaned = strings.Replace(cleaned, "\n", "", -1)
+	return []byte(cleaned)
 }

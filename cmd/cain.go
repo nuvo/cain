@@ -49,7 +49,8 @@ type backupCmd struct {
 	cassandraDataDir     string
 	authentication       bool
 	cassandraUsername    string
-	nodetoolPasswordPath string
+	nodetoolPasswordFile string
+	cqlshrcFile          string
 
 	out io.Writer
 }
@@ -86,7 +87,8 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 				CassandraDataDir:     b.cassandraDataDir,
 				Authentication:       b.authentication,
 				CassandraUsername:    b.cassandraUsername,
-				NodetoolPasswordPath: b.nodetoolPasswordPath,
+				NodetoolPasswordFile: b.nodetoolPasswordFile,
+				CqlshrcFile:          b.cqlshrcFile,
 			}
 			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
@@ -103,9 +105,10 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.IntVarP(&b.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
 	f.Float64VarP(&b.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
 	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
-	f.BoolVar(&b.authentication, "authentication", utils.GetBoolEnvVar("CAIN_AUTHENTICATION", false), "use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION")
-	f.StringVar(&b.cassandraUsername, "cassandra-username", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cassandra"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
-	f.StringVar(&b.nodetoolPasswordPath, "nodetool-password-path", utils.GetStringEnvVar("CAIN_NODETOOL_PASSWORD_PATH", "/home/cassandra/.nodetool/password"), "path to nodetool password file. Overrides $CAIN_NODETOOL_PASSWORD_PATH")
+	f.BoolVarP(&b.authentication, "authentication", "a", utils.GetBoolEnvVar("CAIN_AUTHENTICATION", false), "use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION")
+	f.StringVarP(&b.cassandraUsername, "cassandra-username", "u", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cqlshrc"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
+	f.StringVar(&b.nodetoolPasswordFile, "nodetool-password-file", utils.GetStringEnvVar("CAIN_NODETOOL_PASSWORD_FILE", "/home/cassandra/.nodetool/password"), "path to nodetool password file. Overrides $CAIN_NODETOOL_PASSWORD_FILE")
+	f.StringVar(&b.cqlshrcFile, "cqlshrc-file", utils.GetStringEnvVar("CAIN_CQLSHRC_FILE", "/home/cassandra/.cassandra/cqlshrc"), "path to cqlshrc file. Overrides $CAIN_CQLSHRC_FILE")
 	return cmd
 }
 
@@ -123,7 +126,8 @@ type restoreCmd struct {
 	cassandraDataDir     string
 	authentication       bool
 	cassandraUsername    string
-	nodetoolPasswordPath string
+	nodetoolPasswordFile string
+	cqlshrcFile          string
 
 	out io.Writer
 }
@@ -166,7 +170,8 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 				CassandraDataDir:     r.cassandraDataDir,
 				Authentication:       r.authentication,
 				CassandraUsername:    r.cassandraUsername,
-				NodetoolPasswordPath: r.nodetoolPasswordPath,
+				NodetoolPasswordFile: r.nodetoolPasswordFile,
+				CqlshrcFile:          r.cqlshrcFile,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
@@ -186,9 +191,10 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 	f.Float64VarP(&r.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
 	f.StringVar(&r.userGroup, "user-group", utils.GetStringEnvVar("CAIN_USER_GROUP", "cassandra:cassandra"), "user and group who should own restored files. Overrides $CAIN_USER_GROUP")
 	f.StringVar(&r.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
-	f.BoolVar(&r.authentication, "authentication", utils.GetBoolEnvVar("CAIN_AUTHENTICATION", false), "use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION")
-	f.StringVar(&r.cassandraUsername, "cassandra-username", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cassandra"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
-	f.StringVar(&r.nodetoolPasswordPath, "nodetool-password-path", utils.GetStringEnvVar("CAIN_NODETOOL_PASSWORD_PATH", "/home/cassandra/.nodetool/password"), "path to nodetool password file. Overrides $CAIN_NODETOOL_PASSWORD_PATH")
+	f.BoolVarP(&r.authentication, "authentication", "a", utils.GetBoolEnvVar("CAIN_AUTHENTICATION", false), "use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION")
+	f.StringVarP(&r.cassandraUsername, "cassandra-username", "u", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cqlshrc"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
+	f.StringVarP(&r.nodetoolPasswordFile, "nodetool-password-file", "f", utils.GetStringEnvVar("CAIN_NODETOOL_PASSWORD_FILE", "/home/cassandra/.nodetool/password"), "path to nodetool password file. Overrides $CAIN_NODETOOL_PASSWORD_FILE")
+	f.StringVar(&r.cqlshrcFile, "cqlshrc-file", utils.GetStringEnvVar("CAIN_CQLSHRC_FILE", "/home/cassandra/.cassandra/cqlshrc"), "path to cqlshrc file. Overrides $CAIN_CQLSHRC_FILE")
 	return cmd
 }
 
