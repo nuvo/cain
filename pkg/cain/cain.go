@@ -11,26 +11,24 @@ import (
 
 // Authentication options if cassandra cluster uses authentication
 type Authentication struct {
-	enabled              bool
-	username             string
-	nodetoolPasswordFile string
-	cqlshrcFile          string
+	enabled                 bool
+	username                string
+	nodetoolCredentialsFile string
 }
 
 // BackupOptions are the options to pass to Backup
 type BackupOptions struct {
-	Namespace            string
-	Selector             string
-	Container            string
-	Keyspace             string
-	Dst                  string
-	Parallel             int
-	BufferSize           float64
-	CassandraDataDir     string
-	Authentication       bool
-	CassandraUsername    string
-	NodetoolPasswordFile string
-	CqlshrcFile          string
+	Namespace               string
+	Selector                string
+	Container               string
+	Keyspace                string
+	Dst                     string
+	Parallel                int
+	BufferSize              float64
+	CassandraDataDir        string
+	Authentication          bool
+	CassandraUsername       string
+	NodetoolCredentialsFile string
 }
 
 // Backup performs backup
@@ -59,23 +57,15 @@ func Backup(o BackupOptions) (string, error) {
 		return "", err
 	}
 	auth := Authentication{
-		enabled:              o.Authentication,
-		username:             o.CassandraUsername,
-		nodetoolPasswordFile: o.NodetoolPasswordFile,
-		cqlshrcFile:          o.CqlshrcFile,
+		enabled:                 o.Authentication,
+		username:                o.CassandraUsername,
+		nodetoolCredentialsFile: o.NodetoolCredentialsFile,
 	}
 	if o.Authentication {
-
-		log.Println("Testing existence of cqlshrc file")
-		if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.CqlshrcFile); err != nil {
+		log.Println("Testing existence of nodetool credentials file")
+		if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.NodetoolCredentialsFile); err != nil {
 			return "", err
 		}
-
-		log.Println("Testing existence of nodetool password file")
-		if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.NodetoolPasswordFile); err != nil {
-			return "", err
-		}
-
 	}
 
 	log.Println("Backing up schema")
@@ -107,21 +97,20 @@ func Backup(o BackupOptions) (string, error) {
 
 // RestoreOptions are the options to pass to Restore
 type RestoreOptions struct {
-	Src                  string
-	Keyspace             string
-	Tag                  string
-	Schema               string
-	Namespace            string
-	Selector             string
-	Container            string
-	Parallel             int
-	BufferSize           float64
-	UserGroup            string
-	CassandraDataDir     string
-	Authentication       bool
-	CassandraUsername    string
-	NodetoolPasswordFile string
-	CqlshrcFile          string
+	Src                     string
+	Keyspace                string
+	Tag                     string
+	Schema                  string
+	Namespace               string
+	Selector                string
+	Container               string
+	Parallel                int
+	BufferSize              float64
+	UserGroup               string
+	CassandraDataDir        string
+	Authentication          bool
+	CassandraUsername       string
+	NodetoolCredentialsFile string
 }
 
 // Restore performs restore
@@ -146,19 +135,13 @@ func Restore(o RestoreOptions) error {
 		return err
 	}
 	auth := Authentication{
-		enabled:              o.Authentication,
-		username:             o.CassandraUsername,
-		nodetoolPasswordFile: o.NodetoolPasswordFile,
-		cqlshrcFile:          o.CqlshrcFile,
+		enabled:                 o.Authentication,
+		username:                o.CassandraUsername,
+		nodetoolCredentialsFile: o.NodetoolCredentialsFile,
 	}
 	if o.Authentication {
-
-		log.Println("Testing existence of cqlshrc file")
-		if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.CqlshrcFile); err != nil {
-			return err
-		}
-		log.Println("Testing existence of nodetool password file")
-		if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.NodetoolPasswordFile); err != nil {
+		log.Println("Testing existence of nodetool credentials file")
+		if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.NodetoolCredentialsFile); err != nil {
 			return err
 		}
 	}

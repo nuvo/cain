@@ -125,7 +125,7 @@ func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, args []string, auth Authentication) (string, error) {
 	var command []string
 	if auth.enabled {
-		command = append([]string{"nodetool", "-u", auth.username, "-pwf", auth.nodetoolPasswordFile}, args...)
+		command = append([]string{"nodetool", "-u", auth.username, "-pwf", auth.nodetoolCredentialsFile}, args...)
 	} else {
 		command = append([]string{"nodetool"}, args...)
 	}
