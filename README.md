@@ -55,14 +55,18 @@ Usage:
   cain backup [flags]
 
 Flags:
-  -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
-      --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
-  -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
-      --dst string                  destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST
-  -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
-  -n, --namespace string            namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
-  -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
-  -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
+  -a, --authentication                     use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION
+  -b, --buffer-size float                  in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
+      --cassandra-data-dir string          cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
+  -u, --cassandra-username string          cassandra username. Overrides $CAIN_CASSANDRA_USERNAME (default "cain")
+  -c, --container string                   container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
+      --dst string                         destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST
+  -h, --help                               help for backup
+  -k, --keyspace string                    keyspace to act on. Overrides $CAIN_KEYSPACE
+  -n, --namespace string                   namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
+      --nodetool-credentials-file string   path to nodetool credentials file. Overrides $CAIN_NODETOOL_CREDENTIALS_FILE (default "/home/cassandra/.nodetool/credentials")
+  -p, --parallel int                       number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
+  -l, --selector string     
 ```
 
 #### Examples
@@ -75,6 +79,19 @@ cain backup \
     -l release=cassandra \
     -k keyspace \
     --dst s3://db-backup/cassandra
+```
+
+Backup to AWS S3 with Cassandra authentication enabled
+
+```
+cain backup \
+    -n default \
+    -l release=cassandra \
+    -k keyspace \
+    --dst s3://db-backup/cassandra
+    -a
+    -u cain
+    --nodetool-credentials-file /home/cassandra/.nodetool/credentials
 ```
 
 Backup to Azure Blob Storage
@@ -105,17 +122,21 @@ Usage:
   cain restore [flags]
 
 Flags:
-  -b, --buffer-size float           in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
-      --cassandra-data-dir string   cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
-  -c, --container string            container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
-  -k, --keyspace string             keyspace to act on. Overrides $CAIN_KEYSPACE
-  -n, --namespace string            namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
-  -p, --parallel int                number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
-  -s, --schema string               schema version to restore (optional). Overrides $CAIN_SCHEMA
-  -l, --selector string             selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
-      --src string                  source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name. Overrides $CAIN_SRC
-  -t, --tag string                  tag to restore. Overrides $CAIN_TAG
-      --user-group string           user and group who should own restored files. Overrides $CAIN_USER_GROUP (default "cassandra:cassandra")
+  -a, --authentication                     use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION
+  -b, --buffer-size float                  in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE (default 6.75)
+      --cassandra-data-dir string          cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR (default "/var/lib/cassandra/data")
+  -u, --cassandra-username string          cassandra username. Overrides $CAIN_CASSANDRA_USERNAME (default "cain")
+  -c, --container string                   container name to act on. Overrides $CAIN_CONTAINER (default "cassandra")
+  -h, --help                               help for restore
+  -k, --keyspace string                    keyspace to act on. Overrides $CAIN_KEYSPACE
+  -n, --namespace string                   namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
+  -f, --nodetool-credentials-file string   path to nodetool credentials file. Overrides $CAIN_NODETOOL_CREDENTIALS_FILE (default "/home/cassandra/.nodetool/credentials")
+  -p, --parallel int                       number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
+  -s, --schema string                      schema version to restore (optional). Overrides $CAIN_SCHEMA
+  -l, --selector string                    selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
+      --src string                         source to restore from. Example: s3://bucket/cassandra/namespace/cluster-name. Overrides $CAIN_SRC
+  -t, --tag string                         tag to restore. Overrides $CAIN_TAG
+      --user-group string                  user and group who should own restored files. Overrides $CAIN_USER_GROUP (default "cassandra:cassandra")
 ```
 
 #### Examples
@@ -211,6 +232,7 @@ Since Cain uses [Skbn](https://github.com/nuvo/skbn), adding support for additio
 
 | Cain version | Skbn version |
 |--------------|--------------|
+| 0.5.2        | 0.4.2        |
 | 0.5.1        | 0.4.2        |
 | 0.5.0        | 0.4.1        |
 | 0.4.2        | 0.4.1        |
@@ -238,6 +260,18 @@ Skbn uses the default AWS [credentials chain](https://docs.aws.amazon.com/sdk-fo
 ### Azure Blob Storage
 
 Skbn uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment variables for authentication.
+
+### Cassandra Credentials
+When Authentication is enabled Cain will look for default credentials   
+for `cqlsh` in `/home/cassandra/.cassandra/credentials`   
+if you use authentication please make sure the cassandra   
+container has this file and the username and password are correct.   
+     
+For `nodetool` authentications default credentials are in:   
+`/home/cassandra/.nodetool/credentials` can be overridden by    
+setting the `--nodetool-credentials-file` flag.    
+When this flag is used, the username for the nodetool    
+authentication must be provided as well .   
 
 ## Examples
 

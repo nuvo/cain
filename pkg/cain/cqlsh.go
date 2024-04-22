@@ -13,8 +13,8 @@ import (
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
-func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string) (string, error) {
-	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container)
+func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string, creds Credentials) (string, error) {
+	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container, creds)
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +148,6 @@ func CqlshF(iK8sClient interface{}, namespace, pod, container string, file strin
 	command := []string{"cqlsh", "-f", file}
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
-
 	if len(stderr) != 0 {
 		return nil, fmt.Errorf("STDERR: " + (string)(stderr))
 	}
