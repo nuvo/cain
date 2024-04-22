@@ -264,13 +264,14 @@ Skbn uses `AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_ACCESS_KEY` environment var
 ### Cassandra Credentials
 When Authentication is enabled Cain will look for default credentials   
 for `cqlsh` in `/home/cassandra/.cassandra/credentials`   
-if you use authentication please make sure the cassandra container has this file    
-and the username and password are correct.   
+if you use authentication please make sure the cassandra   
+container has this file and the username and password are correct.   
      
 For `nodetool` authentications default credentials are in:   
 `/home/cassandra/.nodetool/credentials` can be overridden by    
 setting the `--nodetool-credentials-file` flag.    
-When used, the username for the nodetool authentication must be provided as well .   
+When this flag is used, the username for the nodetool    
+authentication must be provided as well .   
 
 ## Examples
 
