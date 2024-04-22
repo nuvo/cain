@@ -13,8 +13,8 @@ import (
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
-func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string, auth Authentication) (string, error) {
-	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container, auth)
+func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string, creds Credentials) (string, error) {
+	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container, creds)
 	if err != nil {
 		return "", err
 	}

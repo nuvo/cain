@@ -11,7 +11,7 @@ import (
 )
 
 // TakeSnapshots takes a snapshot using nodetool in all pods in parallel
-func TakeSnapshots(iClient interface{}, pods []string, namespace, container, keyspace string, auth Authentication) string {
+func TakeSnapshots(iClient interface{}, pods []string, namespace, container, keyspace string, creds Credentials) string {
 	k8sClient := iClient.(*skbn.K8sClient)
 	tag := utils.GetTimeStamp()
 	bwgSize := len(pods)
@@ -20,7 +20,7 @@ func TakeSnapshots(iClient interface{}, pods []string, namespace, container, key
 		bwg.Add(1)
 
 		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
-			if err := takeSnapshot(k8sClient, namespace, pod, container, keyspace, tag, auth); err != nil {
+			if err := takeSnapshot(k8sClient, namespace, pod, container, keyspace, tag, creds); err != nil {
 				log.Fatal(err)
 			}
 			bwg.Done()
@@ -32,7 +32,7 @@ func TakeSnapshots(iClient interface{}, pods []string, namespace, container, key
 }
 
 // ClearSnapshots clears a snapshot using nodetool in all pods in parallel
-func ClearSnapshots(iClient interface{}, pods []string, namespace, container, keyspace, tag string, auth Authentication) {
+func ClearSnapshots(iClient interface{}, pods []string, namespace, container, keyspace, tag string, creds Credentials) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	bwgSize := len(pods)
 	bwg := utils.NewBoundedWaitGroup(bwgSize)
@@ -40,7 +40,7 @@ func ClearSnapshots(iClient interface{}, pods []string, namespace, container, ke
 		bwg.Add(1)
 
 		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string) {
-			if err := clearSnapshot(k8sClient, namespace, pod, container, keyspace, tag, auth); err != nil {
+			if err := clearSnapshot(k8sClient, namespace, pod, container, keyspace, tag, creds); err != nil {
 				log.Fatal(err)
 			}
 			bwg.Done()
@@ -50,30 +50,30 @@ func ClearSnapshots(iClient interface{}, pods []string, namespace, container, ke
 }
 
 // RefreshTables refreshes tables in all pods in parallel
-func RefreshTables(iClient interface{}, namespace, container, keyspace string, pods, tables []string, auth Authentication) {
+func RefreshTables(iClient interface{}, namespace, container, keyspace string, pods, tables []string, creds Credentials) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	bwgSize := len(pods)
 	bwg := utils.NewBoundedWaitGroup(bwgSize)
 	for _, pod := range pods {
 		bwg.Add(1)
 
-		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace string, tables []string, auth Authentication) {
+		go func(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace string, tables []string, creds Credentials) {
 			for _, table := range tables {
-				if err := refreshTable(k8sClient, namespace, pod, container, keyspace, table, auth); err != nil {
+				if err := refreshTable(k8sClient, namespace, pod, container, keyspace, table, creds); err != nil {
 					log.Fatal(err)
 				}
 			}
 			bwg.Done()
-		}(k8sClient, namespace, pod, container, keyspace, tables, auth)
+		}(k8sClient, namespace, pod, container, keyspace, tables, creds)
 	}
 	bwg.Wait()
 }
 
 // GetClusterName gets the name of the cassandra cluster
-func GetClusterName(iClient interface{}, namespace, pod, container string, auth Authentication) (string, error) {
+func GetClusterName(iClient interface{}, namespace, pod, container string, creds Credentials) (string, error) {
 	k8sClient := iClient.(*skbn.K8sClient)
 	command := []string{"describecluster"}
-	output, err := nodetool(k8sClient, namespace, pod, container, command, auth)
+	output, err := nodetool(k8sClient, namespace, pod, container, command, creds)
 	if err != nil {
 		return "", err
 	}
@@ -89,10 +89,10 @@ func GetClusterName(iClient interface{}, namespace, pod, container string, auth 
 	return output, nil
 }
 
-func takeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string, auth Authentication) error {
+func takeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string, creds Credentials) error {
 	log.Println(pod, "Taking snapshot of keyspace", keyspace)
 	command := []string{"snapshot", "-t", tag, keyspace}
-	output, err := nodetool(k8sClient, namespace, pod, container, command, auth)
+	output, err := nodetool(k8sClient, namespace, pod, container, command, creds)
 	if err != nil {
 		return err
 	}
@@ -100,10 +100,10 @@ func takeSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 	return nil
 }
 
-func clearSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string, auth Authentication) error {
+func clearSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, tag string, creds Credentials) error {
 	log.Println(pod, "Clearing snapshot of keyspace", keyspace)
 	command := []string{"clearsnapshot", "-t", tag, keyspace}
-	output, err := nodetool(k8sClient, namespace, pod, container, command, auth)
+	output, err := nodetool(k8sClient, namespace, pod, container, command, creds)
 	if err != nil {
 		return err
 	}
@@ -111,10 +111,10 @@ func clearSnapshot(k8sClient *skbn.K8sClient, namespace, pod, container, keyspac
 	return nil
 }
 
-func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, table string, auth Authentication) error {
+func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace, table string, creds Credentials) error {
 	log.Println(pod, "Refreshing table", table, "in keyspace", keyspace)
 	command := []string{"refresh", keyspace, table}
-	output, err := nodetool(k8sClient, namespace, pod, container, command, auth)
+	output, err := nodetool(k8sClient, namespace, pod, container, command, creds)
 	if err != nil {
 		return err
 	}
@@ -122,10 +122,10 @@ func refreshTable(k8sClient *skbn.K8sClient, namespace, pod, container, keyspace
 	return nil
 }
 
-func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, args []string, auth Authentication) (string, error) {
+func nodetool(k8sClient *skbn.K8sClient, namespace, pod, container string, args []string, creds Credentials) (string, error) {
 	var command []string
-	if auth.enabled {
-		command = append([]string{"nodetool", "-u", auth.username, "-pwf", auth.nodetoolCredentialsFile}, args...)
+	if creds.enabled {
+		command = append([]string{"nodetool", "-u", creds.username, "-pwf", creds.nodetoolCredentialsFile}, args...)
 	} else {
 		command = append([]string{"nodetool"}, args...)
 	}

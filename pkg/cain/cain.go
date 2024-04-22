@@ -10,7 +10,7 @@ import (
 )
 
 // Authentication options if cassandra cluster uses authentication
-type Authentication struct {
+type Credentials struct {
 	enabled                 bool
 	username                string
 	nodetoolCredentialsFile string
@@ -56,7 +56,7 @@ func Backup(o BackupOptions) (string, error) {
 	if err := utils.TestK8sDirectory(k8sClient, pods, o.Namespace, o.Container, o.CassandraDataDir); err != nil {
 		return "", err
 	}
-	auth := Authentication{
+	creds := Credentials{
 		enabled:                 o.Authentication,
 		username:                o.CassandraUsername,
 		nodetoolCredentialsFile: o.NodetoolCredentialsFile,
@@ -69,13 +69,13 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Backing up schema")
-	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath, auth)
+	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath, creds)
 	if err != nil {
 		return "", err
 	}
 
 	log.Println("Taking snapshots")
-	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, auth)
+	tag := TakeSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, creds)
 
 	log.Println("Calculating paths. This may take a while...")
 	fromToPathsAllPods, err := utils.GetFromAndToPathsFromK8s(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, dstBasePath, o.CassandraDataDir)
@@ -89,7 +89,7 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Clearing snapshots")
-	ClearSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, auth)
+	ClearSnapshots(k8sClient, pods, o.Namespace, o.Container, o.Keyspace, tag, creds)
 
 	log.Println("All done!")
 	return tag, nil
@@ -134,7 +134,7 @@ func Restore(o RestoreOptions) error {
 	if err := utils.TestK8sDirectory(k8sClient, existingPods, o.Namespace, o.Container, o.CassandraDataDir); err != nil {
 		return err
 	}
-	auth := Authentication{
+	creds := Credentials{
 		enabled:                 o.Authentication,
 		username:                o.CassandraUsername,
 		nodetoolCredentialsFile: o.NodetoolCredentialsFile,
@@ -197,7 +197,7 @@ func Restore(o RestoreOptions) error {
 	}
 
 	log.Println("Refreshing tables")
-	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh, auth)
+	RefreshTables(k8sClient, o.Namespace, o.Container, o.Keyspace, podsToBeRestored, tablesToRefresh, creds)
 
 	log.Println("All done!")
 	return nil
