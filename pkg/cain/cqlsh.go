@@ -13,7 +13,7 @@ import (
 )
 
 // BackupKeyspaceSchema gets the schema of the keyspace and backs it up
-func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string, creds Credentials) (string, error) {
+func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, container, keyspace, dstPrefix, dstPath string, creds Credentials, s3maxUploadParts int, s3partSize int64, verbose bool) (string, error) {
 	clusterName, err := GetClusterName(iK8sClient, namespace, pod, container, creds)
 	if err != nil {
 		return "", err
@@ -28,7 +28,7 @@ func BackupKeyspaceSchema(iK8sClient, iDstClient interface{}, namespace, pod, co
 	schemaToPath := filepath.Join(dstBasePath, "schema.cql")
 
 	reader := bytes.NewReader(schema)
-	if err := skbn.Upload(iDstClient, dstPrefix, schemaToPath, "", reader); err != nil {
+	if err := skbn.Upload(iDstClient, dstPrefix, schemaToPath, "", reader, s3partSize, s3maxUploadParts, verbose); err != nil {
 		return "", err
 	}
 
@@ -50,13 +50,13 @@ func DescribeKeyspaceSchema(iK8sClient interface{}, namespace, pod, container, k
 }
 
 // RestoreKeyspaceSchema restores a keyspace schema
-func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath, namespace, pod, container, keyspace, schema string, parallel int, bufferSize float64) (string, error) {
+func RestoreKeyspaceSchema(srcClient, iK8sClient interface{}, srcPrefix, srcPath, namespace, pod, container, keyspace, schema string, parallel int, bufferSize float64, s3maxUploadParts int, s3partSize int64, verbose bool) (string, error) {
 	schemaTmpFile := fmt.Sprintf("/tmp/%s/schema.cql", keyspace)
 	fromTo := skbn.FromToPair{
 		FromPath: filepath.Join(srcPath, keyspace, schema, "schema.cql"),
 		ToPath:   filepath.Join(namespace, pod, container, schemaTmpFile),
 	}
-	if err := skbn.PerformCopy(srcClient, iK8sClient, srcPrefix, "k8s", []skbn.FromToPair{fromTo}, parallel, bufferSize); err != nil {
+	if err := skbn.PerformCopy(srcClient, iK8sClient, srcPrefix, "k8s", []skbn.FromToPair{fromTo}, parallel, bufferSize, s3partSize, s3maxUploadParts, verbose); err != nil {
 		return "", err
 	}
 	if _, err := CqlshF(iK8sClient, namespace, pod, container, schemaTmpFile); err != nil {

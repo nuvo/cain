@@ -46,12 +46,14 @@ type backupCmd struct {
 	dst                     string
 	parallel                int
 	bufferSize              float64
+	s3partSize              int64
+	s3maxUploadParts        int
 	cassandraDataDir        string
 	authentication          bool
 	cassandraUsername       string
 	nodetoolCredentialsFile string
-
-	out io.Writer
+	verbose                 bool
+	out                     io.Writer
 }
 
 // NewBackupCmd performs a backup of a cassandra cluster
@@ -83,10 +85,13 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 				Dst:                     b.dst,
 				Parallel:                b.parallel,
 				BufferSize:              b.bufferSize,
+				S3PartSize:              b.s3partSize,
+				S3MaxUploadParts:        b.s3maxUploadParts,
 				CassandraDataDir:        b.cassandraDataDir,
 				Authentication:          b.authentication,
 				CassandraUsername:       b.cassandraUsername,
 				NodetoolCredentialsFile: b.nodetoolCredentialsFile,
+				Verbose:                 b.verbose,
 			}
 			if _, err := cain.Backup(options); err != nil {
 				log.Fatal(err)
@@ -102,6 +107,8 @@ func NewBackupCmd(out io.Writer) *cobra.Command {
 	f.StringVar(&b.dst, "dst", utils.GetStringEnvVar("CAIN_DST", ""), "destination to backup to. Example: s3://bucket/cassandra. Overrides $CAIN_DST")
 	f.IntVarP(&b.parallel, "parallel", "p", utils.GetIntEnvVar("CAIN_PARALLEL", 1), "number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL")
 	f.Float64VarP(&b.bufferSize, "buffer-size", "b", utils.GetFloat64EnvVar("CAIN_BUFFER_SIZE", 6.75), "in memory buffer size (MB) to use for files copy (buffer per file). Overrides $CAIN_BUFFER_SIZE")
+	f.Int64VarP(&b.s3partSize, "s3-part-size", "s", utils.GetInt64EnvVar("CAIN_S3_PART_SIZE", 128*1024*1024), "size of each part in bytes for s3 multipart upload. Overrides $CAIN_S3_PART_SIZE")
+	f.IntVarP(&b.s3maxUploadParts, "s3-max-upload-parts", "m", utils.GetIntEnvVar("CAIN_S3_MAX_UPLOAD_PARTS", 10000), "maximum number of parts to upload in parallel for s3 multipart upload. Overrides $CAIN_S3_MAX_UPLOAD_PARTS")
 	f.StringVar(&b.cassandraDataDir, "cassandra-data-dir", utils.GetStringEnvVar("CAIN_CASSANDRA_DATA_DIR", "/var/lib/cassandra/data"), "cassandra data directory. Overrides $CAIN_CASSANDRA_DATA_DIR")
 	f.BoolVarP(&b.authentication, "authentication", "a", utils.GetBoolEnvVar("CAIN_AUTHENTICATION", false), "use authentication for nodetool and clqsh. Overrides $CAIN_AUTHENTICATION")
 	f.StringVarP(&b.cassandraUsername, "cassandra-username", "u", utils.GetStringEnvVar("CAIN_CASSANDRA_USERNAME", "cain"), "cassandra username. Overrides $CAIN_CASSANDRA_USERNAME")
@@ -124,8 +131,8 @@ type restoreCmd struct {
 	authentication          bool
 	cassandraUsername       string
 	nodetoolCredentialsFile string
-
-	out io.Writer
+	verbose                 bool
+	out                     io.Writer
 }
 
 // NewRestoreCmd performs a restore from backup of a cassandra cluster
@@ -167,6 +174,7 @@ func NewRestoreCmd(out io.Writer) *cobra.Command {
 				Authentication:          r.authentication,
 				CassandraUsername:       r.cassandraUsername,
 				NodetoolCredentialsFile: r.nodetoolCredentialsFile,
+				Verbose:                 r.verbose,
 			}
 			if err := cain.Restore(options); err != nil {
 				log.Fatal(err)
