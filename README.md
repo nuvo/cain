@@ -66,7 +66,9 @@ Flags:
   -n, --namespace string                   namespace to find cassandra cluster. Overrides $CAIN_NAMESPACE (default "default")
       --nodetool-credentials-file string   path to nodetool credentials file. Overrides $CAIN_NODETOOL_CREDENTIALS_FILE (default "/home/cassandra/.nodetool/credentials")
   -p, --parallel int                       number of files to copy in parallel. set this flag to 0 for full parallelism. Overrides $CAIN_PARALLEL (default 1)
-  -l, --selector string     
+  -m, --s3-max-upload-parts int            maximum number of parts to upload in parallel for s3 multipart upload. Overrides $CAIN_S3_MAX_UPLOAD_PARTS (default 10000)
+  -s, --s3-part-size int                   size of each part in bytes for s3 multipart upload. Overrides $CAIN_S3_PART_SIZE (default 134217728)
+  -l, --selector string                    selector to filter on. Overrides $CAIN_SELECTOR (default "app=cassandra")
 ```
 
 #### Examples
@@ -232,6 +234,7 @@ Since Cain uses [Skbn](https://github.com/nuvo/skbn), adding support for additio
 
 | Cain version | Skbn version |
 |--------------|--------------|
+| 0.5.3        | 0.5.1        |
 | 0.5.2        | 0.4.2        |
 | 0.5.1        | 0.4.2        |
 | 0.5.0        | 0.4.1        |
