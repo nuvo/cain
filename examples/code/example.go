@@ -17,19 +17,41 @@ func main() {
 
 	// Backup
 	dst := "s3://bucket/cassandra"
-	tag, err := cain.Backup(namespace, selector, container, keyspace, dst, parallel)
+	tag, err := cain.Backup(
+		cain.BackupOptions{
+			Namespace: namespace,
+			Selector:  selector,
+			Container: container,
+			Keyspace:  keyspace,
+			Dst:       dst,
+			Parallel:  parallel,
+		})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Restore
 	src := "s3://bucket/cassandra/namespace/cluster-name"
-	if err := cain.Restore(src, keyspace, tag, namespace, selector, container, parallel); err != nil {
+	if err := cain.Restore(cain.RestoreOptions{
+		Src:       src,
+		Namespace: namespace,
+		Selector:  selector,
+		Container: container,
+		Keyspace:  keyspace,
+		Tag:       tag,
+		Parallel:  parallel,
+	}); err != nil {
 		log.Fatal(err)
 	}
 
 	// Schema
-	schema, sum, err := cain.Schema(namespace, selector, container, keyspace)
+	schema, sum, err := cain.Schema(
+		cain.SchemaOptions{
+			Namespace: namespace,
+			Selector:  selector,
+			Container: container,
+			Keyspace:  keyspace,
+		})
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.20.0
 RUN apk --no-cache add ca-certificates
 COPY cain /usr/local/bin/cain
 RUN addgroup -g 1001 -S cain \

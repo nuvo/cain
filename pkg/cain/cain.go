@@ -25,10 +25,13 @@ type BackupOptions struct {
 	Dst                     string
 	Parallel                int
 	BufferSize              float64
+	S3MaxUploadParts        int
+	S3PartSize              int64
 	CassandraDataDir        string
 	Authentication          bool
 	CassandraUsername       string
 	NodetoolCredentialsFile string
+	Verbose                 bool
 }
 
 // Backup performs backup
@@ -69,7 +72,7 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Backing up schema")
-	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath, creds)
+	dstBasePath, err := BackupKeyspaceSchema(k8sClient, dstClient, o.Namespace, pods[0], o.Container, o.Keyspace, dstPrefix, dstPath, creds, o.S3MaxUploadParts, o.S3PartSize, o.Verbose)
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +87,7 @@ func Backup(o BackupOptions) (string, error) {
 	}
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, o.Parallel, o.BufferSize); err != nil {
+	if err := skbn.PerformCopy(k8sClient, dstClient, "k8s", dstPrefix, fromToPathsAllPods, o.Parallel, o.BufferSize, o.S3PartSize, o.S3MaxUploadParts, o.Verbose); err != nil {
 		return "", err
 	}
 
@@ -106,11 +109,14 @@ type RestoreOptions struct {
 	Container               string
 	Parallel                int
 	BufferSize              float64
+	S3MaxDownloadParts      int
+	S3PartSize              int64
 	UserGroup               string
 	CassandraDataDir        string
 	Authentication          bool
 	CassandraUsername       string
 	NodetoolCredentialsFile string
+	Verbose                 bool
 }
 
 // Restore performs restore
@@ -152,7 +158,7 @@ func Restore(o RestoreOptions) error {
 			return err
 		}
 		log.Println("Schema not found, restoring schema", o.Schema)
-		sum, err = RestoreKeyspaceSchema(srcClient, k8sClient, srcPrefix, srcBasePath, o.Namespace, existingPods[0], o.Container, o.Keyspace, o.Schema, o.Parallel, o.BufferSize)
+		sum, err = RestoreKeyspaceSchema(srcClient, k8sClient, srcPrefix, srcBasePath, o.Namespace, existingPods[0], o.Container, o.Keyspace, o.Schema, o.Parallel, o.BufferSize, o.S3MaxDownloadParts, o.S3PartSize, o.Verbose)
 		if err != nil {
 			return err
 		}
@@ -187,7 +193,7 @@ func Restore(o RestoreOptions) error {
 	TruncateTables(k8sClient, o.Namespace, o.Container, o.Keyspace, existingPods, tablesToRefresh, materializedViews)
 
 	log.Println("Starting files copy")
-	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, o.Parallel, o.BufferSize); err != nil {
+	if err := skbn.PerformCopy(srcClient, k8sClient, srcPrefix, "k8s", fromToPaths, o.Parallel, o.BufferSize, o.S3PartSize, o.S3MaxDownloadParts, o.Verbose); err != nil {
 		return err
 	}
 
