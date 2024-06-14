@@ -127,7 +127,7 @@ func GetMaterializedViews(iK8sClient interface{}, namespace, container, pod, key
 func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []string) ([]byte, error) {
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
-	command = append([]string{"cqlsh", "-e"}, command...)
+	command = append([]string{"cqlsh  --ssl", "-e"}, command...)
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 
@@ -145,7 +145,7 @@ func Cqlsh(iK8sClient interface{}, namespace, pod, container string, command []s
 func CqlshF(iK8sClient interface{}, namespace, pod, container string, file string) ([]byte, error) {
 	k8sClient := iK8sClient.(*skbn.K8sClient)
 
-	command := []string{"cqlsh", "-f", file}
+	command := []string{"cqlsh  --ssl", "-f", file}
 	stdout := new(bytes.Buffer)
 	stderr, err := skbn.Exec(*k8sClient, namespace, pod, container, command, nil, stdout)
 	if len(stderr) != 0 {
